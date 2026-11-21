@@ -16,8 +16,9 @@ multi-company and external messaging are explicitly out of scope.
 **v0.1.0 — feature complete for the brief, demo-ready.** All six addons are on `main`, CI runs the
 full install + test suite, and the demo seed/narrative are scripted. Current verification:
 
-- **82 tests, 0 failed** across the six addons on a fresh Odoo 19 + PostgreSQL 16 database.
+- **92 tests, 0 failed** across the six addons on a fresh Odoo 19 + PostgreSQL 16 database.
 - Browser-verified dashboard for both an admin and an employee (cards, heatmap, role gating).
+- Live demo seed + narrative run on a fresh database: transfer, booking conflict, maintenance, audit close, final KPIs.
 - Independent gate evidence for the base/assets/booking slice (33 tests + an 11-case runtime probe)
   and the integrated branch (73 tests + audit/heatmap/KPI probes).
 
@@ -26,7 +27,7 @@ full install + test suite, and the demo seed/narrative are scripted. Current ver
 | Addon | What it does |
 |-------|--------------|
 | `assetflow_base` | Departments, categories, employees, roles/signup, sequences, notifications, activity log, admin setup |
-| `assetflow_assets` | Asset registry and lifecycle, allocation, transfer, return, overdue flag + daily notification cron |
+| `assetflow_assets` | Asset registry and lifecycle, allocation, transfer, return, QR labels, overdue flag + daily notification cron |
 | `assetflow_booking` | Shared-resource bookings: overlap-safe half-open intervals, calendar/list, reminders, state sync |
 | `assetflow_maintenance` | Requests, manager approval/rejection, technician assignment, start/resolve with asset state restore |
 | `assetflow_audit` | Audit cycles/lines, scoped generation, auditor workflow, close locks + discrepancy PDF |
