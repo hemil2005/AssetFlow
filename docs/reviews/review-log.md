@@ -15,9 +15,9 @@ Severity:
 | Workstream | Owner | State | Branch | Review |
 |------------|-------|-------|--------|--------|
 | Docs: research, spec, plan, instructions, ADRs | northern-envelope | complete, in review by team | local `docs/` | self-checked |
-| `assetflow_base` scaffold | flat-orchid | in progress, nothing pushed | unknown | blocked: no branch |
-| `assetflow_assets` | flat-orchid | not started | — | — |
-| `assetflow_booking` | unassigned | not started | — | — |
+| `assetflow_base` scaffold | flat-orchid | reviewed, changes requested | `feat/assetflow-base` @ `0b3e05a` | B1-B9 open |
+| `assetflow_assets` | flat-orchid | reviewed, changes requested | `feat/assetflow-base` @ `0b3e05a` | B1-B10 open |
+| `assetflow_booking` | flat-orchid | reviewed, changes requested | `feat/assetflow-booking` @ `b04646a` | B10, M13 open |
 | `assetflow_maintenance` | unassigned | not started | — | — |
 | `assetflow_audit` | northern-envelope (proposed) | not started | — | — |
 | `assetflow_reports` | northern-envelope (proposed) | not started | — | — |
@@ -39,22 +39,35 @@ Severity:
 
 ## Finding log
 
-_No code review yet: no addon branch has been pushed. The first gate opens when flat-orchid pushes
-`assetflow_base`._
+_First review completed 2026-11-21 against `feat/assetflow-base` and `feat/assetflow-booking`:
+[`2026-11-21-base-assets-booking.md`](2026-11-21-base-assets-booking.md)._
 
 | ID | Severity | Area | Finding | Owner | State |
 |----|----------|------|---------|-------|-------|
-| —  | —        | —    | —       | —     | —     |
+| B1 | H | hygiene | committed `__pycache__` / `.pyc` (15 base/assets, 21 booking) | flat-orchid | open |
+| B2 | H | security | no allocation/transfer record rules; every internal user can read/edit transfers | flat-orchid | open |
+| B3 | H | security | `base.group_user` read on all `hr.employee`; private HR data exposed; ADR-0002 divergence | flat-orchid | open |
+| B4 | H | spec | signup missing (`auth_signup` not implemented) | flat-orchid | open |
+| B5 | H | spec | department model/screen missing (Screen 3A) | flat-orchid | open |
+| B6 | H | spec | role promotion UI missing (Screen 3C, R2) | flat-orchid | open |
+| B7 | H | lifecycle | `_set_state` has no transition guards; destructive actions manager-only, no reason | flat-orchid | open |
+| B8 | H | integrity | direct allocation create/edit bypasses asset state; transfer allocates unallocated asset | flat-orchid | open |
+| B9 | H | spec | return flow has no required condition/notes | flat-orchid | open |
+| B10 | H | booking | non-bookable/lost assets bookable; state writable; reserve only via cron; no allocation/maintenance conflict | flat-orchid | open |
+| M1-M16 | M | mixed | field drift, category code, notifications/log, unlink, transfer states, head RBAC, noupdate, chatter, allocation UI, tests, TZ test, private call, `size`, reminders | flat-orchid | open |
 
 ## Delegation requests
 
 | To | Task | Why | Due |
 |----|------|-----|-----|
-| flat-orchid | push the WIP `assetflow_base` branch, even incomplete | review cannot start against an unpushed tree | first checkpoint |
-| flat-orchid | confirm six-addon paths and technical model names against the spec | docs must match reality | with the first push |
+| flat-orchid | fix B1-B9 on `feat/assetflow-base` and B10/M13 on `feat/assetflow-booking`, then push both | gate is blocked on security and data integrity | next push |
+| flat-orchid | reply with any blocker you dispute, with the reason and the spec/ADR you want changed | disagreements are resolved before code, not after | next push |
+| flat-orchid | do not start `assetflow_maintenance` until base/assets/booking pass the gate | later addons depend on stable asset/employee models | after gate |
+| northern-envelope | re-review both branches within one turn of the next push and update this log | keep the loop short | next push |
 | pleasing-dumpling | **withdrawn** — session is out of scope by the repo owner's decision; no files may be written | assignment reclaimed by northern-envelope | — |
 | northern-envelope | reclaim the Docker/verification harness (compose, `.env.example`, `.gitignore`, test runner) | previous delegation withdrawn | after base gate |
-| tasseled-chisel | take `assetflow_booking` after the base lands | independent addon, clear file set | after base gate |
+| flat-orchid | take `assetflow_booking` after base + assets land | tasseled-chisel's assignment withdrawn (owner offline); keep the code with the active install | after assets gate |
+| tasseled-chisel | **withdrawn** — owner offline; session is out of scope, no files may be written | work reassigned to flat-orchid | — |
 | Hemil | start Docker Desktop and create the `assetflow` database | unblocks local verification | before Phase 2 review |
 
 Delegation is only effective when the assignee accepts; the Murmur thread is the record of
@@ -66,6 +79,10 @@ acceptance.
   repo owner on 2026-11-21. Its assignment was withdrawn, its messages are muted, and it must not be
   assigned work or waited on. Murmur has no per-session removal command; closing that agent drops the
   session from `who`.
+- **tasseled-chisel** (`device-7db7b502/94abab`, antigravity on dhruviljpatel's machine) — assignment
+  withdrawn on 2026-11-21 because its owner is offline. It must not start `assetflow_booking` or write
+  files; that work moved to flat-orchid. The session may be offline and will see the withdrawal on its
+  next turn.
 
 ## Known spec decisions to check in code
 

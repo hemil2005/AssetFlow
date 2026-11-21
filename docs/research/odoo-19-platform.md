@@ -364,6 +364,7 @@ The repo-local skills are useful but not fully accurate for 19.0. Verified corre
 | `_name` is optional and derived automatically | It is derived, **but the ORM logs a warning telling you to make it explicit**. | Always write `_name`. |
 | Only `models.Constraint` and `models.Index` exist | `models.UniqueIndex` also exists and supports partial `WHERE` definitions. | Use `UniqueIndex` for one-active-allocation. |
 | Button visibility examples use `states="draft"` | Odoo 19 view docs use `invisible="state != 'draft'"`; `states`/`attrs` are legacy. | Use `invisible=` expressions (and `column_invisible=` where relevant). |
+| Calendar view examples use `date_end` | Odoo 19 calendar attributes are `date_start` / `date_stop` / `date_delay`. | Use `date_stop`. |
 | OWL snippets with `owl="1"` and QUnit | Odoo 19 web source and Hoot are the authority; snippets are generic/legacy. | Verify every OWL/JS pattern against `$ODOO_SOURCE`. |
 | `_sql_constraints` examples elsewhere | Not supported in 19; use declarative `models.Constraint`. | Never write `_sql_constraints`. |
 
