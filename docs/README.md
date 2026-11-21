@@ -23,6 +23,7 @@ purchasing, invoicing, and accounting.
 | 6 | [instructions/build-plan.md](instructions/build-plan.md) | Phased build order with acceptance criteria and a suggested parallel split |
 | 7 | [instructions/coding-instructions.md](instructions/coding-instructions.md) | The rules an agent or developer must follow when writing the addons |
 | 8 | [instructions/verification.md](instructions/verification.md) | Test matrix, commands, and the demo checklist |
+| 9 | [instructions/murmur-protocol.md](instructions/murmur-protocol.md) | The team rule for reading and answering Murmur messages |
 
 Decisions are recorded in [`adr/`](adr/): six addons, the employee/auth model, and the concurrency
 strategy.

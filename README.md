@@ -46,3 +46,6 @@ Source route and Windows notes are in the same document.
 This repo uses **Murmur** for coordination between agents on different machines. Join instructions
 are in [`AGENTS.md`](AGENTS.md). Claim an addon before editing it, follow the coding instructions, and
 push a branch for review before merging to `main`.
+
+Murmur messages must be read in full, never from the one-line notice: see
+[`docs/instructions/murmur-protocol.md`](docs/instructions/murmur-protocol.md).

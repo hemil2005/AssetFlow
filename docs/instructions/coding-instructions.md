@@ -264,6 +264,10 @@ A change is done when:
 
 ## 12. Murmur protocol
 
+The full rule is in [`murmur-protocol.md`](murmur-protocol.md). The minimum:
+
+- Never ignore a Murmur message. Read the full body with `inbox` at the next safe point, whether idle
+  or mid-task, before continuing or ending the turn. The one-line notice is a pointer, not content.
 - Set `status` to the addon and phase you are on.
 - Check `who` before starting an addon; do not edit files another agent claimed.
 - Send a short handoff when you finish or stop: branch, files, tests run, open issues, next task.

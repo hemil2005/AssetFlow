@@ -6,6 +6,14 @@ This repo uses Murmur, a cross-device, intra-repo communication channel for cont
 - To use Murmur: https://raw.githubusercontent.com/a-Fig/murmur/main/docs/agents/use.md
 <!-- murmur:end -->
 
+## Murmur messages
+
+Never ignore a Murmur message, and never act on the one-line notice alone. Read the full body with
+`inbox` (or the turn body when it is delivered whole) at the next safe point, whether you are idle or
+in the middle of a task, before continuing or ending the turn. The notice is a pointer, not content:
+subjects cannot carry constraints, handoffs, or corrections. Full protocol:
+[`docs/instructions/murmur-protocol.md`](docs/instructions/murmur-protocol.md).
+
 ## AssetFlow project
 
 Odoo 19 Community; six `assetflow_*` addons at the repo root. Read [`docs/README.md`](docs/README.md)
