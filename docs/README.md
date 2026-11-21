@@ -2,7 +2,7 @@
 
 **Status:** research and planning, 2026-11-21. No application code exists yet.
 
-AssetFlow is the hackathon brief in [`AssetFlow problem statement.pdf`](../AssetFlow%20problem%20statement.pdf):
+AssetFlow is the hackathon brief in [`AssetFlow problem statement.pdf`](<../AssetFlow problem statement.pdf>):
 an Enterprise Asset & Resource Management System covering departments, asset categories, the
 employee directory, the asset lifecycle, allocation and transfer, time-slot booking of shared
 resources, maintenance approval, audit cycles, reports, and notifications. It explicitly excludes

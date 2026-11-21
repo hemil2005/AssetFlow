@@ -1,7 +1,7 @@
 # AssetFlow
 
 Enterprise Asset & Resource Management System for the hackathon brief
-[`AssetFlow problem statement.pdf`](AssetFlow%20problem%20statement.pdf).
+[`AssetFlow problem statement.pdf`](<AssetFlow problem statement.pdf>).
 
 AssetFlow tracks departments, categories, employees, physical assets, allocations and transfers,
 time-slot bookings of shared resources, maintenance approvals, audit cycles, reports, and
