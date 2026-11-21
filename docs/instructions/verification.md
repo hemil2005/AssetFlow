@@ -16,7 +16,10 @@ or a screenshot. "It worked when I clicked it" is not evidence.
 | Promotion authorization | Access | employee cannot write `groups_id`; admin can |
 | Signup creates employee | Http/Form | new account has `base.group_user`, no AssetFlow group, an employee row |
 | Notification ownership | Access | user A cannot read/write user B's notification |
-| Activity log immutability | Access | employee has no access; manager read-only |
+| Activity log scope | Access | employee has no access; department head read-only for their department's rows or their people's; manager/admin read-only and see all |
+
+Activity-log rows written before the log carried a department belong to no department, so a Department
+Head sees only rows logged after the upgrade; managers and administrators still see those rows.
 
 ### `assetflow_assets`
 
