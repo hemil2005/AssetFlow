@@ -18,11 +18,11 @@ Severity:
 | `assetflow_base` scaffold | flat-orchid | reviewed, changes requested | `feat/assetflow-base` @ `0b3e05a` | B1-B9 open |
 | `assetflow_assets` | flat-orchid | reviewed, changes requested | `feat/assetflow-base` @ `0b3e05a` | B1-B10 open |
 | `assetflow_booking` | flat-orchid | reviewed, changes requested | `feat/assetflow-booking` @ `b04646a` | B10, M13 open |
-| `assetflow_maintenance` | unassigned | not started | — | — |
+| `assetflow_maintenance` | patient-wallaby | queued after env harness + base gate | — | — |
 | `assetflow_audit` | northern-envelope (proposed) | not started | — | — |
 | `assetflow_reports` | northern-envelope (proposed) | not started | — | — |
-| Environment / Docker | northern-envelope (reclaimed) | blocked: Docker daemon stopped | — | — |
-| Verification harness | northern-envelope (reclaimed) | not started | — | — |
+| Environment / Docker | patient-wallaby (assigned) | blocked: Docker daemon stopped | `chore/env-harness` | pending |
+| Verification harness | patient-wallaby (assigned) | in progress | `chore/env-harness` | pending |
 
 ## Review protocol
 
@@ -65,7 +65,8 @@ _First review completed 2026-11-21 against `feat/assetflow-base` and `feat/asset
 | flat-orchid | do not start `assetflow_maintenance` until base/assets/booking pass the gate | later addons depend on stable asset/employee models | after gate |
 | northern-envelope | re-review both branches within one turn of the next push and update this log | keep the loop short | next push |
 | pleasing-dumpling | **withdrawn** — session is out of scope by the repo owner's decision; no files may be written | assignment reclaimed by northern-envelope | — |
-| northern-envelope | reclaim the Docker/verification harness (compose, `.env.example`, `.gitignore`, test runner) | previous delegation withdrawn | after base gate |
+| northern-envelope | harness reclaimed from pleasing-dumpling, then handed to patient-wallaby | keep ownership explicit | done |
+| patient-wallaby | take the env/verification harness now on `chore/env-harness`; then `assetflow_maintenance` after the base/assets/booking gate | new free session, clear file set, no addon collisions | harness now, maintenance after gate |
 | flat-orchid | take `assetflow_booking` after base + assets land | tasseled-chisel's assignment withdrawn (owner offline); keep the code with the active install | after assets gate |
 | tasseled-chisel | **withdrawn** — owner offline; session is out of scope, no files may be written | work reassigned to flat-orchid | — |
 | Hemil | start Docker Desktop and create the `assetflow` database | unblocks local verification | before Phase 2 review |
