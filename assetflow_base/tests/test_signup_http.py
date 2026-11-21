@@ -60,6 +60,43 @@ class TestSignupHttp(HttpCase):
         self.assertEqual(employee.department_id, self.env.ref('assetflow_base.department_general'))
         self.assertEqual(employee.email, user.login.lower())
 
+    def test_invited_signup_stays_portal(self):
+        """A token signup is an invited partner, not a self-service employee."""
+        partner = self.env['res.partner'].sudo().create({
+            'name': 'Invited Partner',
+            'email': 'invited-%s@example.com' % uuid.uuid4().hex[:10],
+        })
+        partner.signup_prepare()
+        token = partner.sudo()._generate_signup_token()
+        password = 'Invited-123'
+        self.authenticate(None, None)
+        payload = {
+            'token': token,
+            'login': partner.email,
+            'name': partner.name,
+            'password': password,
+            'confirm_password': password,
+            'csrf_token': http.Request.csrf_token(self),
+        }
+        with patch.object(
+            self.env.registry['ir.http'],
+            '_verify_request_recaptcha_token',
+            lambda request, captcha: None,
+        ):
+            response = self.url_open('/web/signup', data=payload, timeout=60)
+        self.assertEqual(response.status_code, 200, 'Invited signup should end on a rendered page.')
+
+        user = self.env['res.users'].sudo().search([('login', '=', partner.email)], limit=1)
+        self.assertTrue(user, 'The invitation route did not create a user.')
+        self.assertEqual(user.partner_id, partner)
+        self.assertIn(user, partner.user_ids)
+        self.assertTrue(user.has_group('base.group_portal'), 'Invited partners stay portal.')
+        self.assertFalse(user.has_group('base.group_user'), 'Invited partners must not become internal.')
+        for group in self.assetflow_groups:
+            self.assertFalse(user.has_group(group), 'Invited signup must not grant %s.' % group)
+        employee = self.env['assetflow.employee'].sudo().search([('user_id', '=', user.id)])
+        self.assertFalse(employee, 'Invited partners are external and get no employee record.')
+
     def test_signup_user_cannot_promote_itself(self):
         user = self._signup()
         employee = self.env['assetflow.employee'].sudo().search([('user_id', '=', user.id)], limit=1)

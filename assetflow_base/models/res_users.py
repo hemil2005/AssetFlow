@@ -17,6 +17,13 @@ class ResUsers(models.Model):
     @api.model
     def _signup_create_user(self, values):
         user = super()._signup_create_user(values)
+        if values.get('partner_id'):
+            # Invitation flow: auth_signup only adds partner_id when the form was
+            # opened through an invitation token. Invited partners are external and
+            # must keep the portal account the template gives them; only a
+            # self-service signup becomes an internal employee with no role.
+            return user
+
         internal_group = self.env.ref('base.group_user', raise_if_not_found=False)
         portal_group = self.env.ref('base.group_portal', raise_if_not_found=False)
         if internal_group:
