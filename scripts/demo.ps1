@@ -34,6 +34,10 @@
 .PARAMETER SkipNarrative
   Do not run scripts/demo_narrative.py.
 
+.PARAMETER NoServe
+  Build, seed and run the narrative, then stop without restarting Odoo or waiting for HTTP.
+  Used by scripts/demo_smoke.ps1 as the release-gate path.
+
 .PARAMETER Force
   Allow dropping a database whose name does not match ^assetflow_(demo|seed|test).
 
@@ -46,6 +50,9 @@
 
 .EXAMPLE
   ./scripts/demo.ps1 -SkipSeed -SkipNarrative
+
+.EXAMPLE
+  ./scripts/demo.ps1 -Database assetflow_test_smoke -NoServe
 #>
 [CmdletBinding()]
 param(
@@ -54,6 +61,7 @@ param(
     [string]$Password = $(if ($env:ASSETFLOW_DEMO_PASSWORD) { $env:ASSETFLOW_DEMO_PASSWORD } else { "AssetFlow!2026" }),
     [switch]$SkipSeed,
     [switch]$SkipNarrative,
+    [switch]$NoServe,
     [switch]$Force
 )
 
@@ -474,7 +482,7 @@ if ($dropExit -ne 0) {
 $createLog = New-LogPath "createdb"
 $createExit = Invoke-LoggedCommand -FilePath "docker" -Arguments @(
     "compose", "--file", $composeFile, "exec", "-T", "db",
-    "createdb", "-O", $dbUser, $Database
+    "createdb", "-O", $dbUser, "-U", $dbUser, $Database
 ) -LogFile $createLog
 if ($createExit -ne 0) {
     throw "createdb failed (exit $createExit). Log: $createLog"
@@ -515,6 +523,8 @@ else {
     }
     Assert-LogClean -LogFile $seedLog -Label "Demo seed"
     Assert-LogContains -LogFile $seedLog -Pattern "demo seed complete" -Label "Demo seed"
+    Assert-LogContains -LogFile $seedLog -Pattern "=== AssetFlow demo KPIs ===" -Label "Demo seed"
+    Assert-LogContains -LogFile $seedLog -Pattern "maya.manager login: OK" -Label "Demo seed"
     Write-Host "    Seed committed and its KPI assertions passed."
 }
 
@@ -530,7 +540,18 @@ else {
         throw "Demo narrative failed (exit $narrativeExit). Read $narrativeLog."
     }
     Assert-LogClean -LogFile $narrativeLog -Label "Demo narrative"
+    Assert-LogContains -LogFile $narrativeLog -Pattern "demo narrative complete" -Label "Demo narrative"
     Write-Host "    Narrative committed."
+}
+
+# --- Serve or stop for the smoke gate ---------------------------------------
+
+if ($NoServe) {
+    Write-Host ""
+    Write-Host "Demo smoke build complete." -ForegroundColor Green
+    Write-Host "  Database: $Database"
+    Write-Host "  Logs:     $logDir"
+    return
 }
 
 # --- Serve ------------------------------------------------------------------
