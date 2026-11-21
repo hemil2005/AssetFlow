@@ -48,6 +48,13 @@ class AssetflowBooking(models.Model):
                     'Asset %s is %s and cannot be booked.', asset.asset_tag, asset.state,
                 ))
         bookings = super().create(vals_list)
+        now = fields.Datetime.now()
+        current = bookings.filtered(
+            lambda booking: booking.start_datetime <= now < booking.end_datetime
+        )
+        if current:
+            # Trust boundary: booking state is workflow-owned, not user-editable.
+            current.with_context(allow_state_write=True).write({'state': 'ongoing'})
         bookings._sync_asset_state()
         return bookings
 
@@ -109,15 +116,12 @@ class AssetflowBooking(models.Model):
                 ('asset_id', '=', asset.id), ('state', '=', 'ongoing'),
                 ('start_datetime', '<=', now), ('end_datetime', '>', now),
             ])
+            # Trust boundary: an employee may book a resource but has no asset
+            # write right, so the state sync is elevated here.
             if current:
-                asset.action_reserve()
+                asset.sudo().action_reserve()
             elif asset.state == 'reserved':
-                upcoming_overlap = self.search_count([
-                    ('asset_id', '=', asset.id), ('state', '=', 'upcoming'),
-                    ('start_datetime', '<=', now), ('end_datetime', '>', now),
-                ])
-                if not upcoming_overlap:
-                    asset.action_release()
+                asset.sudo().action_release()
 
     @api.model
     def _cron_sync_states(self):
@@ -140,9 +144,15 @@ class AssetflowBooking(models.Model):
             ('start_datetime', '>', now),
             ('start_datetime', '<=', soon),
         ]):
+            recipient = booking.employee_id.user_id
+            if not recipient:
+                # Booker has no login: record the reminder as handled rather
+                # than crashing the cron on every run.
+                booking.reminder_sent = True
+                continue
             booking.reminder_sent = True
             self.env['assetflow.notification']._notify(
-                booking.employee_id.user_id,
+                recipient,
                 _('Booking reminder: %s', booking.asset_id.name),
                 _('%s starts at %s.', booking.asset_id.name, booking.start_datetime),
                 notification_type='booking_reminder',

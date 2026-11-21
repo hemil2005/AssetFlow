@@ -99,6 +99,29 @@ class TestAssetflowBooking(TransactionCase):
         self.assertEqual(booking.state, 'ongoing')
         self.assertEqual(self.asset.state, 'reserved')
 
+    def test_employee_can_book_and_reserve_immediately(self):
+        start = fields.Datetime.to_string(fields.Datetime.to_datetime(fields.Datetime.now()) - timedelta(minutes=5))
+        end = fields.Datetime.to_string(fields.Datetime.to_datetime(fields.Datetime.now()) + timedelta(hours=1))
+        booking = self.env['assetflow.booking'].with_user(self.employee_user).create({
+            'asset_id': self.asset.id, 'employee_id': self.employee.id,
+            'start_datetime': start, 'end_datetime': end,
+        })
+        self.assertEqual(booking.state, 'ongoing')
+        self.assertEqual(self.asset.state, 'reserved')
+
+    def test_reminder_skips_booker_without_login(self):
+        no_login = self.env['assetflow.employee'].create({
+            'name': 'Visitor', 'email': 'visitor@assetflow.test', 'department_id': self.department.id,
+        })
+        start = fields.Datetime.to_string(fields.Datetime.to_datetime(fields.Datetime.now()) + timedelta(minutes=10))
+        end = fields.Datetime.to_string(fields.Datetime.to_datetime(fields.Datetime.now()) + timedelta(hours=1))
+        booking = self.env['assetflow.booking'].with_user(self.manager).create({
+            'asset_id': self.asset.id, 'employee_id': no_login.id,
+            'start_datetime': start, 'end_datetime': end,
+        })
+        self.env['assetflow.booking']._cron_send_reminders()
+        self.assertTrue(booking.reminder_sent)
+
     def test_reminder_is_idempotent(self):
         start = fields.Datetime.to_string(fields.Datetime.to_datetime(fields.Datetime.now()) + timedelta(minutes=10))
         end = fields.Datetime.to_string(fields.Datetime.to_datetime(fields.Datetime.now()) + timedelta(hours=1))
