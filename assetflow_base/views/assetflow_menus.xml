@@ -33,6 +33,6 @@
 
     <menuitem id="menu_assetflow_activity_log" name="Activity Logs"
               parent="menu_assetflow_root" action="action_assetflow_activity_log"
-              groups="assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_asset_manager"
+              groups="assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_asset_manager,assetflow_base.group_assetflow_department_head"
               sequence="90"/>
 </odoo>

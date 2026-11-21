@@ -28,6 +28,15 @@
         <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_admin'))]"/>
     </record>
 
+    <record id="assetflow_activity_log_head_rule" model="ir.rule">
+        <field name="name">AssetFlow: heads read their department's activity</field>
+        <field name="model_id" ref="model_assetflow_activity_log"/>
+        <field name="domain_force">['|',
+                                  '&amp;', ('department_id', '!=', False), ('department_id', '=', user.employee_id.department_id.id),
+                                  ('user_id.employee_id.department_id', '=', user.employee_id.department_id.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_department_head'))]"/>
+    </record>
+
     <record id="assetflow_employee_own_rule" model="ir.rule">
         <field name="name">AssetFlow: employees see their own directory record</field>
         <field name="model_id" ref="model_assetflow_employee"/>
