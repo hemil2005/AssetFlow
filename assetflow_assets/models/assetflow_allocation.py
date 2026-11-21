@@ -58,13 +58,6 @@ class AssetflowAllocation(models.Model):
             if not allocation.employee_id and not allocation.department_id:
                 raise ValidationError(_('Choose an employee or a department.'))
 
-    @api.constrains('expected_return_date', 'start_datetime')
-    def _check_dates(self):
-        for allocation in self:
-            if (allocation.expected_return_date
-                    and allocation.expected_return_date < fields.Date.context_today(allocation)):
-                raise ValidationError(_('Expected return cannot be in the past.'))
-
     @api.model_create_multi
     def create(self, vals_list):
         assets = self.env['assetflow.asset'].browse([
