@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
@@ -31,6 +33,9 @@ class AssetflowAllocation(models.Model):
     )
     note = fields.Text(string='Notes')
     is_overdue = fields.Boolean(string='Overdue', compute='_compute_is_overdue', search='_search_is_overdue')
+    last_overdue_notified_on = fields.Date(
+        string='Last Overdue Notice', readonly=True, copy=False,
+    )
 
     @api.depends('state', 'expected_return_date')
     def _compute_is_overdue(self):
@@ -51,6 +56,66 @@ class AssetflowAllocation(models.Model):
         ]
         wants_overdue = (operator == '=' and value) or (operator == '!=' and not value)
         return overdue if wants_overdue else not_overdue
+
+    @api.model
+    def _cron_flag_overdue_allocations(self):
+        """Notify the holder, department head and managers once per day.
+
+        Idempotent per allocation per day: an existing notification for the same
+        allocation/user/type created today suppresses a second one. The asset
+        chatter gets one entry when the allocation is first flagged.
+        """
+        today = fields.Date.context_today(self)
+        day_start = fields.Datetime.to_datetime(today)
+        day_end = day_start + timedelta(days=1)
+        overdue = self.search([
+            ('state', '=', 'active'),
+            ('expected_return_date', '<', today),
+        ])
+        managers = (
+            self.env.ref('assetflow_base.group_assetflow_asset_manager').user_ids
+            | self.env.ref('assetflow_base.group_assetflow_admin').user_ids
+        )
+        notification_model = self.env['assetflow.notification']
+
+        for allocation in overdue:
+            if allocation.last_overdue_notified_on == today:
+                continue
+            recipients = managers | allocation.employee_id.user_id
+            if allocation.department_id.head_id:
+                recipients |= allocation.department_id.head_id.user_id
+
+            title = _('Overdue return: %(tag)s', tag=allocation.asset_id.asset_tag)
+            body = _(
+                'Asset %(tag)s was due back on %(date)s and is still held by %(holder)s.',
+                tag=allocation.asset_id.asset_tag,
+                date=fields.Date.to_string(allocation.expected_return_date),
+                holder=allocation.employee_id.name or allocation.department_id.name or _('a department'),
+            )
+            for user in recipients:
+                already_sent = notification_model.search_count([
+                    ('user_id', '=', user.id),
+                    ('notification_type', '=', 'overdue_return'),
+                    ('res_model', '=', self._name),
+                    ('res_id', '=', allocation.id),
+                    ('create_date', '>=', day_start),
+                    ('create_date', '<', day_end),
+                ])
+                if already_sent:
+                    continue
+                notification_model._notify(
+                    user, title, body,
+                    notification_type='overdue_return',
+                    res_model=self._name, res_id=allocation.id,
+                )
+
+            first_flag = not allocation.last_overdue_notified_on
+            allocation.write({'last_overdue_notified_on': today})
+            if first_flag:
+                allocation.asset_id.message_post(body=body)
+
+        return len(overdue)
+
 
     @api.constrains('employee_id', 'department_id')
     def _check_holder(self):

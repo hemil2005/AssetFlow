@@ -151,3 +151,55 @@ class TestAssetflowAssets(TransactionCase):
         })
         visible = self.env['assetflow.allocation'].with_user(other_user).search([])
         self.assertNotIn(self.asset.allocation_ids, visible)
+
+    def test_overdue_cron_notifies_once_per_day(self):
+        head_user = self.env['res.users'].create({
+            'name': 'IT Head', 'login': 'af_head_test',
+            'group_ids': [(6, 0, [self.env.ref('assetflow_base.group_assetflow_employee').id])],
+        })
+        head = self.env['assetflow.employee'].create({
+            'name': 'Dev Head', 'email': 'dev.head@assetflow.test',
+            'department_id': self.department.id, 'user_id': head_user.id,
+        })
+        self.department.head_id = head
+
+        asset = self.asset.with_user(self.manager)
+        asset.action_allocate(
+            employee=self.employee,
+            expected_return_date=fields.Date.today() - timedelta(days=1),
+        )
+        allocation = asset.allocation_ids
+        notification_model = self.env['assetflow.notification']
+        domain = [
+            ('notification_type', '=', 'overdue_return'),
+            ('res_model', '=', 'assetflow.allocation'),
+            ('res_id', '=', allocation.id),
+        ]
+
+        self.env['assetflow.allocation']._cron_flag_overdue_allocations()
+        notifications = notification_model.search(domain)
+        self.assertIn(self.employee_user, notifications.user_id)
+        self.assertIn(self.manager, notifications.user_id)
+        self.assertIn(head_user, notifications.user_id)
+        self.assertEqual(allocation.last_overdue_notified_on, fields.Date.today())
+        chatter_count = len(asset.message_ids)
+
+        self.env['assetflow.allocation']._cron_flag_overdue_allocations()
+        self.assertEqual(notification_model.search_count(domain), len(notifications))
+        self.assertEqual(len(asset.message_ids), chatter_count)
+
+    def test_overdue_cron_ignores_current_and_returned_allocations(self):
+        asset = self.asset.with_user(self.manager)
+        asset.action_allocate(employee=self.employee)
+        allocation = asset.allocation_ids
+        self.env['assetflow.allocation']._cron_flag_overdue_allocations()
+        self.assertFalse(allocation.last_overdue_notified_on)
+        self.assertEqual(self.env['assetflow.notification'].search_count([
+            ('notification_type', '=', 'overdue_return'),
+            ('res_id', '=', allocation.id),
+        ]), 0)
+
+        allocation.write({'expected_return_date': fields.Date.today() - timedelta(days=1)})
+        asset.action_return(condition='good', notes='Late but fine')
+        self.env['assetflow.allocation']._cron_flag_overdue_allocations()
+        self.assertFalse(allocation.last_overdue_notified_on)
