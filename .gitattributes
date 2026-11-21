@@ -1,0 +1,8 @@
+# Keep skill/documentation assets out of GitHub's language statistics so the
+# repository language bar reflects the product code, not bundled agent skills.
+.opencode/** linguist-vendored
+docs/** linguist-documentation
+*.pdf linguist-documentation
+
+# Product code
+assetflow_*/** linguist-detectable
