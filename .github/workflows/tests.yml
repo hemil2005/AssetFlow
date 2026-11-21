@@ -11,7 +11,7 @@ name: Odoo 19 addon tests
 #       -i assetflow_base,assetflow_assets,assetflow_booking,assetflow_maintenance,assetflow_audit,assetflow_reports \
 #       --test-enable \
 #       --test-tags /assetflow_base,/assetflow_assets,/assetflow_booking,/assetflow_maintenance,/assetflow_audit,/assetflow_reports \
-#       --without-demo --no-http --stop-after-init --log-level=test
+#       --without-demo --no-http --http-port=8079 --stop-after-init --log-level=test
 # The odoo:19.0 image entrypoint adds /mnt/extra-addons to addons_path, so no
 # --addons-path argument is needed. The postgres service below is the same as
 # the af-pg container above, with a health check instead of a sleep.
@@ -65,7 +65,7 @@ jobs:
             -e HOST=127.0.0.1 -e PORT=5432 -e USER=odoo -e PASSWORD=odoo \
             odoo:19.0 odoo -d assetflow_ci \
               -i "$ADDONS" --test-enable --test-tags "$TAGS" \
-              --without-demo --no-http --stop-after-init --log-level=test 2>&1 | tee odoo.log
+              --without-demo --no-http --http-port=8079 --stop-after-init --log-level=test 2>&1 | tee odoo.log
           if grep -Eq "odoo.tests.result: [1-9][0-9]* failed|[1-9][0-9]* error\(s\)" odoo.log; then
             echo "Odoo reported test failures"
             exit 1
@@ -79,3 +79,29 @@ jobs:
           name: odoo-log
           path: odoo.log
           if-no-files-found: ignore
+
+  # Second release gate: build the demo on a throwaway database and assert the
+  # seed KPI block and the narrative completion marker. scripts/demo_smoke.ps1
+  # owns drop/create/install and starts its own Compose stack, so this job needs
+  # no postgres service. It prints DEMO SMOKE PASS on success.
+  demo_smoke:
+    name: Demo seed and narrative smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run demo smoke gate
+        shell: pwsh
+        run: ./scripts/demo_smoke.ps1
+
+      - name: Upload demo logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-smoke-logs
+          path: odoo-data/logs/*
+          if-no-files-found: ignore
+
