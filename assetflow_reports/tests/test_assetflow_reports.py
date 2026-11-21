@@ -136,6 +136,21 @@ class TestAssetflowReports(TransactionCase):
         self.assertTrue(dashboard.has_access('read'))
         self.assertFalse(dashboard.has_access('write'))
 
+    def test_department_head_gets_rule_filtered_activity(self):
+        head_user = self.env['res.users'].create({
+            'name': 'Reports Head', 'login': 'af_reports_head',
+            'group_ids': [(6, 0, [self.env.ref(
+                'assetflow_base.group_assetflow_department_head',
+            ).id])],
+        })
+        self.env['assetflow.employee'].create({
+            'name': 'Reports Head', 'email': 'reports.head@assetflow.test',
+            'department_id': self.department.id, 'user_id': head_user.id,
+        })
+        recent = self.env['assetflow.dashboard'].with_user(head_user).get_recent_activity()
+        self.assertTrue(recent['recent_log'])
+        self.assertFalse(recent['can_manage_assets'])
+
     def test_department_report_action_exists(self):
         report = self.env.ref('assetflow_reports.action_report_department_allocation')
         self.assertEqual(report.model, 'assetflow.department')

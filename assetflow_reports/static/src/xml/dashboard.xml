@@ -2,148 +2,216 @@
 <templates xml:space="preserve">
     <t t-name="assetflow_reports.Dashboard">
         <div class="af-dashboard">
-            <div class="af-dashboard-header">
-                <div>
-                    <h1>AssetFlow Dashboard</h1>
-                    <p class="text-muted" t-if="state.data" t-out="'Updated ' + state.data.generated_at"/>
+            <header class="af-topbar">
+                <div class="af-topbar-id">
+                    <h1 class="af-title">
+                        <span class="af-title-app">AssetFlow</span>
+                        <span class="af-title-page">Dashboard</span>
+                    </h1>
+                    <p class="af-meta" t-if="state.data">Updated at <t t-out="updatedLabel"></t></p>
+                    <p class="af-meta" t-else=""><span class="af-sk af-sk-meta"></span></p>
                 </div>
-                <div class="af-dashboard-actions">
-                    <button class="btn btn-secondary" t-on-click="load">Refresh</button>
-                    <button class="btn btn-primary" t-if="state.data.can_manage_assets" t-on-click="newAsset">Register Asset</button>
-                    <button class="btn btn-primary" t-on-click="newBooking">Book Resource</button>
-                    <button class="btn btn-primary" t-on-click="newMaintenance">Raise Maintenance</button>
+                <div class="af-topbar-actions">
+                    <button type="button"
+                            t-att-class="state.loading ? 'af-icon-btn is-busy' : 'af-icon-btn'"
+                            t-att-disabled="state.loading"
+                            title="Refresh dashboard"
+                            aria-label="Refresh dashboard"
+                            t-on-click="load">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 8a6 6 0 1 1-6-6c1.68 0 3.29.67 4.49 1.83L14 5.5"/>
+                            <path d="M14 2v3.5h-3.5"/>
+                        </svg>
+                    </button>
+                    <span class="af-divider" role="presentation"></span>
+                    <button type="button"
+                            t-att-class="'btn af-btn ' + (canRegister ? 'btn-secondary' : 'btn-primary')"
+                            t-att-disabled="state.loading"
+                            t-on-click="newBooking">Book Resource</button>
+                    <button type="button"
+                            class="btn af-btn btn-secondary"
+                            t-att-disabled="state.loading"
+                            t-on-click="newMaintenance">Raise Maintenance</button>
+                    <button type="button"
+                            class="btn af-btn btn-primary"
+                            t-if="canRegister"
+                            t-att-disabled="state.loading"
+                            t-on-click="newAsset">Register Asset</button>
+                </div>
+            </header>
+
+            <div t-if="state.loading" class="af-skeleton" role="status" aria-live="polite">
+                <span class="af-visually-hidden">Loading dashboard</span>
+                <div class="af-sk-readout" aria-hidden="true">
+                    <div class="af-sk-cluster" t-foreach="kpiGroups" t-as="group" t-key="group.key">
+                        <span class="af-sk af-sk-line is-title"></span>
+                        <span class="af-sk af-sk-line"></span>
+                        <span class="af-sk af-sk-line"></span>
+                        <span class="af-sk af-sk-line"></span>
+                    </div>
+                </div>
+                <div class="af-sk-panels" aria-hidden="true">
+                    <div class="af-sk-panel" t-foreach="kpiGroups" t-as="group" t-key="group.key">
+                        <span class="af-sk af-sk-line is-title"></span>
+                        <span class="af-sk af-sk-line"></span>
+                        <span class="af-sk af-sk-line"></span>
+                    </div>
                 </div>
             </div>
 
-            <div t-if="state.loading" class="af-dashboard-state">Loading dashboard…</div>
-            <div t-elif="state.error" class="alert alert-danger" t-out="state.error"/>
+            <div t-elif="state.error" class="af-error">
+                <p class="af-error-title">The dashboard could not load.</p>
+                <p class="af-error-detail" t-out="state.error"/>
+                <button type="button" class="btn af-btn btn-secondary" t-on-click="load">Try again</button>
+            </div>
+
             <t t-else="">
-                <div class="af-kpi-grid">
-                    <div class="af-kpi">
-                        <span class="af-kpi-value" t-out="state.data.assets_available"/>
-                        <span class="af-kpi-label">Assets Available</span>
+                <section class="af-readout" aria-label="Key figures">
+                    <div t-foreach="kpiGroups" t-as="group" t-key="group.key"
+                         t-att-class="'af-readout-group af-readout-' + group.key + (group.flagged ? ' is-flagged' : '')">
+                        <h2 class="af-group-title">
+                            <span t-out="group.title"></span>
+                            <span class="af-group-note" t-if="group.key === 'attention' &amp;&amp; !group.flagged">
+                                All clear
+                            </span>
+                        </h2>
+                        <div class="af-readout-row" t-foreach="group.items" t-as="item" t-key="item.key">
+                            <span class="af-readout-label" t-out="item.label"></span>
+                            <span t-att-class="'af-readout-value' + (item.flagged ? ' is-alert' : '') +
+                                                (state.data[item.key] ? '' : ' is-zero')"
+                                  t-out="state.data[item.key]"></span>
+                        </div>
                     </div>
-                    <div class="af-kpi">
-                        <span class="af-kpi-value" t-out="state.data.assets_allocated"/>
-                        <span class="af-kpi-label">Assets Allocated</span>
-                    </div>
-                    <div class="af-kpi">
-                        <span class="af-kpi-value" t-out="state.data.maintenance_today"/>
-                        <span class="af-kpi-label">Under Maintenance</span>
-                    </div>
-                    <div class="af-kpi">
-                        <span class="af-kpi-value" t-out="state.data.active_bookings"/>
-                        <span class="af-kpi-label">Active Bookings</span>
-                    </div>
-                    <div class="af-kpi">
-                        <span class="af-kpi-value" t-out="state.data.pending_transfers"/>
-                        <span class="af-kpi-label">Pending Transfers</span>
-                    </div>
-                    <div class="af-kpi">
-                        <span class="af-kpi-value" t-out="state.data.upcoming_returns"/>
-                        <span class="af-kpi-label">Upcoming Returns</span>
-                    </div>
-                    <div class="af-kpi af-kpi-danger">
-                        <span class="af-kpi-value" t-out="state.data.overdue_returns"/>
-                        <span class="af-kpi-label">Overdue Returns</span>
-                    </div>
-                    <div class="af-kpi">
-                        <span class="af-kpi-value" t-out="state.data.open_maintenance"/>
-                        <span class="af-kpi-label">Open Maintenance</span>
-                    </div>
-                    <div class="af-kpi">
-                        <span class="af-kpi-value" t-out="state.data.unread_notifications"/>
-                        <span class="af-kpi-label">Unread Notifications</span>
-                    </div>
-                </div>
+                </section>
 
                 <div class="af-panels">
-                    <div class="af-panel">
-                        <h3>Overdue returns</h3>
-                        <table class="table table-sm" t-if="state.data.recent_overdue.length">
-                            <thead><tr><th>Asset</th><th>Holder</th><th>Expected</th></tr></thead>
+                    <section class="af-section">
+                        <div class="af-section-head">
+                            <h2 class="af-section-title">Overdue returns</h2>
+                            <span class="af-count is-alert" t-if="state.data.recent_overdue.length"
+                                  t-out="state.data.recent_overdue.length"></span>
+                        </div>
+                        <table class="af-table" t-if="state.data.recent_overdue.length">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Asset</th>
+                                    <th scope="col">Holder</th>
+                                    <th scope="col" class="af-num">Expected</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 <tr t-foreach="state.data.recent_overdue" t-as="row" t-key="row.asset_id">
-                                    <td><a href="#" t-on-click.prevent="() => this.openAsset(row.asset_id)" t-out="row.asset_tag"/></td>
-                                    <td t-out="row.holder"/>
-                                    <td class="text-danger" t-out="row.expected_return_date"/>
+                                    <td>
+                                        <a class="af-asset" href="#"
+                                           t-on-click.prevent="() => this.openAsset(row.asset_id)">
+                                            <span class="af-asset-tag" t-out="row.asset_tag"></span>
+                                            <span class="af-asset-name" t-out="row.asset_name"></span>
+                                        </a>
+                                    </td>
+                                    <td class="af-holder" t-out="row.holder"></td>
+                                    <td class="af-num is-late">
+                                        <span t-out="shortDate(row.expected_return_date)"></span>
+                                        <span class="af-due" t-out="dueLabel(row.expected_return_date)"></span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
-                        <p t-else="" class="text-muted">No overdue returns.</p>
-                    </div>
+                        <p class="af-empty" t-else="">
+                            Nothing overdue. Every allocated asset is inside its return window.
+                        </p>
+                    </section>
 
-                    <div class="af-panel">
-                        <h3>Upcoming returns</h3>
-                        <table class="table table-sm" t-if="state.data.recent_upcoming.length">
-                            <thead><tr><th>Asset</th><th>Holder</th><th>Expected</th></tr></thead>
+                    <section class="af-section">
+                        <div class="af-section-head">
+                            <h2 class="af-section-title">Upcoming returns</h2>
+                            <span class="af-count" t-if="state.data.recent_upcoming.length"
+                                  t-out="state.data.recent_upcoming.length"></span>
+                        </div>
+                        <table class="af-table" t-if="state.data.recent_upcoming.length">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Asset</th>
+                                    <th scope="col">Holder</th>
+                                    <th scope="col" class="af-num">Due</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 <tr t-foreach="state.data.recent_upcoming" t-as="row" t-key="row.asset_id">
-                                    <td><a href="#" t-on-click.prevent="() => this.openAsset(row.asset_id)" t-out="row.asset_tag"/></td>
-                                    <td t-out="row.holder"/>
-                                    <td t-out="row.expected_return_date"/>
+                                    <td>
+                                        <a class="af-asset" href="#"
+                                           t-on-click.prevent="() => this.openAsset(row.asset_id)">
+                                            <span class="af-asset-tag" t-out="row.asset_tag"></span>
+                                            <span class="af-asset-name" t-out="row.asset_name"></span>
+                                        </a>
+                                    </td>
+                                    <td class="af-holder" t-out="row.holder"></td>
+                                    <td class="af-num">
+                                        <span t-out="shortDate(row.expected_return_date)"></span>
+                                        <span class="af-due" t-out="dueLabel(row.expected_return_date)"></span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
-                        <p t-else="" class="text-muted">No upcoming returns.</p>
-                    </div>
+                        <p class="af-empty" t-else="">Nothing due back in the next week.</p>
+                    </section>
 
-                    <div class="af-panel">
-                        <h3 class="af-panel-heading">
-                            Notifications
-                            <button t-if="state.data.unread_notifications"
-                                    class="btn btn-sm btn-link"
-                                    t-on-click="markAllRead">Mark all read</button>
-                        </h3>
-                        <ul class="af-notifications" t-if="state.data.recent_notifications.length">
-                            <li t-foreach="state.data.recent_notifications" t-as="notification" t-key="notification.id">
-                                <strong t-out="notification.title"/>
-                                <div class="text-muted" t-out="notification.body"/>
+                    <section class="af-section">
+                        <div class="af-section-head">
+                            <h2 class="af-section-title">Unread notifications</h2>
+                            <span class="af-count" t-if="state.data.recent_notifications.length"
+                                  t-out="state.data.recent_notifications.length"></span>
+                        </div>
+                        <ul class="af-feed" t-if="state.data.recent_notifications.length">
+                            <li class="af-feed-item" t-foreach="state.data.recent_notifications"
+                                t-as="notification" t-key="notification.id">
+                                <div class="af-feed-head">
+                                    <strong class="af-feed-title" t-out="notification.title"></strong>
+                                    <span class="af-feed-type"
+                                          t-out="notificationLabel(notification.type)"></span>
+                                </div>
+                                <p class="af-feed-body" t-if="notification.body" t-out="notification.body"/>
                             </li>
                         </ul>
-                        <p t-else="" class="text-muted">Nothing unread.</p>
-                    </div>
-
-                    <div class="af-panel">
-                        <h3>Recent activity</h3>
-                        <ul class="af-notifications" t-if="state.data.recent_log.length">
-                            <li t-foreach="state.data.recent_log" t-as="entry" t-key="entry.id">
-                                <strong t-out="entry.action"/>
-                                <div class="text-muted" t-out="entry.description"/>
-                                <small class="text-muted" t-out="entry.when"/>
-                            </li>
-                        </ul>
-                        <p t-else="" class="text-muted">No recent activity.</p>
-                    </div>
+                        <p class="af-empty" t-else="">You are all caught up.</p>
+                    </section>
                 </div>
 
-                <div class="af-panel af-panel-wide af-heatmap-panel">
-                    <h3>
-                        Booking heatmap
-                        <small class="text-muted" t-if="state.data.heatmap">
-                            <span t-out="state.data.heatmap.date_from"/> to
-                            <span t-out="state.data.heatmap.date_to"/> — hour of day
-                        </small>
-                    </h3>
-                    <div class="af-heatmap" t-if="state.data.heatmap.total">
-                        <div class="af-heatmap-row" t-foreach="state.data.heatmap.rows" t-as="row" t-key="row.day">
-                            <span class="af-heatmap-label" t-out="row.label"/>
-                            <t t-foreach="row.hours" t-as="count" t-key="count_index">
-                                <span class="af-heatmap-cell"
-                                      t-att-style="heatStyle(count)"
-                                      t-att-title="row.label + ' ' + count_index + ':00 — ' + count + ' booking(s)'">
-                                    <span t-if="count" t-out="count"/>
-                                </span>
-                            </t>
+                <section class="af-heatmap-section">
+                    <div class="af-section-head">
+                        <h2 class="af-section-title">Booking heatmap</h2>
+                        <p class="af-section-note" t-if="state.data.heatmap">
+                            <t t-out="shortDate(state.data.heatmap.date_from)"></t>
+                            –
+                            <t t-out="shortDate(state.data.heatmap.date_to)"></t>
+                            · <t t-out="state.data.heatmap.total"></t> bookings by weekday and hour
+                        </p>
+                    </div>
+                    <div class="af-heat" t-if="state.data.heatmap.total">
+                        <div class="af-heat-axis" aria-hidden="true">
+                            <span class="af-heat-corner"></span>
+                            <span class="af-heat-tick" t-foreach="hourTicks" t-as="tick" t-key="tick_index"
+                                  t-out="tick"></span>
                         </div>
-                        <div class="af-heatmap-legend">
-                            <span>0</span>
-                            <span class="af-heatmap-legend-bar"/>
-                            <span t-out="state.data.heatmap.max"/>
+                        <div class="af-heat-row" t-foreach="state.data.heatmap.rows" t-as="row" t-key="row.day">
+                            <span class="af-heat-label" t-out="row.label"></span>
+                            <span t-foreach="row.hours" t-as="count" t-key="count_index"
+                                  t-att-class="count ? 'af-heat-cell' : 'af-heat-cell is-empty'"
+                                  t-att-style="heatStyle(count)"
+                                  t-att-title="row.label + ' ' + count_index + ':00 — ' + count + ' booking(s)'"
+                                  t-out="count || ''"></span>
+                        </div>
+                        <div class="af-heat-legend">
+                            <span class="af-heat-legend-label">0</span>
+                            <span class="af-heat-swatch" t-foreach="legendSteps" t-as="step" t-key="step_index"
+                                  t-att-style="legendStyle(step)"></span>
+                            <span class="af-heat-legend-label">
+                                <t t-out="state.data.heatmap.max"></t> at peak
+                            </span>
                         </div>
                     </div>
-                    <p t-else="" class="text-muted">No bookings in the selected period.</p>
-                </div>
+                    <p class="af-empty" t-else="">No bookings in this period.</p>
+                </section>
             </t>
         </div>
     </t>

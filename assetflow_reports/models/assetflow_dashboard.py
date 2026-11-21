@@ -110,8 +110,11 @@ class AssetflowDashboard(models.TransientModel):
         is_manager = self.env.user.has_group('assetflow_base.group_assetflow_asset_manager') or (
             self.env.user.has_group('assetflow_base.group_assetflow_admin')
         )
+        can_read_log = is_manager or self.env.user.has_group(
+            'assetflow_base.group_assetflow_department_head',
+        )
         log_entries = self.env['assetflow.activity.log']
-        if is_manager:
+        if can_read_log:
             log_entries = log_entries.search([], limit=limit, order='timestamp desc')
 
         return {

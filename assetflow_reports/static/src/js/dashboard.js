@@ -1,6 +1,22 @@
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
+import {
+    deserializeDate,
+    deserializeDateTime,
+    formatDate,
+    formatDateTime,
+    today,
+} from "@web/core/l10n/dates";
+
+const NOTIFICATION_LABELS = {
+    booking_reminder: "Booking reminder",
+    overdue_return: "Overdue return",
+    transfer: "Transfer",
+    maintenance: "Maintenance",
+    audit: "Audit",
+    system: "System",
+};
 
 export class AssetflowDashboard extends Component {
     static template = "assetflow_reports.Dashboard";
@@ -10,6 +26,10 @@ export class AssetflowDashboard extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.state = useState({ data: null, loading: true, error: null });
+        this.legendSteps = [0.25, 0.5, 0.75, 1];
+        this.hourTicks = Array.from({ length: 24 }, (_, hour) =>
+            hour % 3 === 0 ? String(hour).padStart(2, "0") : ""
+        );
         onWillStart(() => this.load());
     }
 
@@ -30,18 +50,99 @@ export class AssetflowDashboard extends Component {
         }
     }
 
+    // --- presentation -----------------------------------------------------
+
+    get canRegister() {
+        return Boolean(this.state.data && this.state.data.can_manage_assets);
+    }
+
+    get updatedLabel() {
+        if (!this.state.data) {
+            return "";
+        }
+        return formatDateTime(deserializeDateTime(this.state.data.generated_at));
+    }
+
+    /** The nine KPI values, grouped the way an operator reads them. */
+    get kpiGroups() {
+        const data = this.state.data || {};
+        return [
+            {
+                key: "attention",
+                title: "Needs attention",
+                flagged: Boolean(data.overdue_returns || data.open_maintenance),
+                items: [
+                    {
+                        key: "overdue_returns",
+                        label: "Overdue returns",
+                        flagged: Boolean(data.overdue_returns),
+                    },
+                    {
+                        key: "open_maintenance",
+                        label: "Open maintenance",
+                        flagged: Boolean(data.open_maintenance),
+                    },
+                    { key: "unread_notifications", label: "Unread notifications" },
+                ],
+            },
+            {
+                key: "inventory",
+                title: "Inventory",
+                items: [
+                    { key: "assets_available", label: "Available" },
+                    { key: "assets_allocated", label: "Allocated" },
+                    { key: "maintenance_today", label: "Under maintenance" },
+                ],
+            },
+            {
+                key: "movement",
+                title: "Movement",
+                items: [
+                    { key: "active_bookings", label: "Active bookings" },
+                    { key: "pending_transfers", label: "Pending transfers" },
+                    { key: "upcoming_returns", label: "Upcoming returns" },
+                ],
+            },
+        ];
+    }
+
+    shortDate(value) {
+        return value ? formatDate(deserializeDate(value)) : "";
+    }
+
+    /** "3d late" / "due today" / "in 5d" for a date-only SQL string. */
+    dueLabel(value) {
+        if (!value) {
+            return "";
+        }
+        const days = Math.round(today().diff(deserializeDate(value), "days").days);
+        if (days > 0) {
+            return `${days}d late`;
+        }
+        if (days === 0) {
+            return "due today";
+        }
+        return `in ${Math.abs(days)}d`;
+    }
+
+    notificationLabel(type) {
+        return NOTIFICATION_LABELS[type] || "Notice";
+    }
+
     heatStyle(count) {
         const max = (this.state.data && this.state.data.heatmap && this.state.data.heatmap.max) || 0;
         if (!count || !max) {
             return "";
         }
         const ratio = Math.min(count / max, 1);
-        return `background-color: rgba(113, 75, 103, ${(0.12 + ratio * 0.7).toFixed(2)});`;
+        // Deep cells carry white type, pale cells carry ink: never the other way round.
+        return `background-color: rgba(72, 42, 62, ${(0.12 + ratio * 0.74).toFixed(2)}); color: ${
+            ratio >= 0.75 ? "#ffffff" : "#2f1c29"
+        };`;
     }
 
-    async markAllRead() {
-        await this.orm.call("assetflow.notification", "action_mark_all_read", []);
-        await this.load();
+    legendStyle(ratio) {
+        return `background-color: rgba(72, 42, 62, ${(0.12 + ratio * 0.74).toFixed(2)});`;
     }
 
     openAsset(assetId) {
