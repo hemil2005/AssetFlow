@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_assetflow_audit" name="Audits"
-              parent="assetflow_base.menu_assetflow_root" sequence="45"
-              groups="assetflow_base.group_assetflow_asset_manager,assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_department_head"/>
+    <!-- Record form on purpose: the `groups` attribute on menuitem only adds
+         groups on upgrade, so a build where Audits was visible to everyone
+         would keep the Employee group. `(6, 0, ...)` replaces the set. -->
+    <record id="menu_assetflow_audit" model="ir.ui.menu">
+        <field name="name">Audits</field>
+        <field name="parent_id" ref="assetflow_base.menu_assetflow_root"/>
+        <field name="sequence">45</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('assetflow_base.group_assetflow_asset_manager'),
+            ref('assetflow_base.group_assetflow_admin'),
+            ref('assetflow_base.group_assetflow_department_head'),
+        ])]"/>
+    </record>
 
     <menuitem id="menu_assetflow_audit_cycle" name="Audit Cycles"
               parent="menu_assetflow_audit" action="action_assetflow_audit_cycle" sequence="10"/>

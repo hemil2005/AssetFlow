@@ -9,14 +9,8 @@ export class AssetflowDashboard extends Component {
     setup() {
         this.orm = useService("orm");
         this.action = useService("action");
-        this.user = useService("user");
         this.state = useState({ data: null, loading: true, error: null });
         onWillStart(() => this.load());
-    }
-
-    get canManageAssets() {
-        return this.user.hasGroup("assetflow_base.group_assetflow_asset_manager")
-            || this.user.hasGroup("assetflow_base.group_assetflow_admin");
     }
 
     async load() {

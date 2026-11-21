@@ -88,6 +88,7 @@ class TestAssetflowReports(TransactionCase):
         self.assertEqual(recent['recent_upcoming'][0]['asset_tag'], 'AF-REP-2')
         self.assertEqual(recent['recent_overdue'], [])
         self.assertIn('recent_log', recent)
+        self.assertTrue(recent['can_manage_assets'])
 
     def test_dashboard_respects_record_rules(self):
         data = self.env['assetflow.dashboard'].with_user(self.employee_user).get_kpi_data()
@@ -99,6 +100,7 @@ class TestAssetflowReports(TransactionCase):
         recent = self.env['assetflow.dashboard'].with_user(self.employee_user).get_recent_activity()
         self.assertEqual(recent['recent_log'], [])
         self.assertEqual(len(recent['recent_notifications']), 1)
+        self.assertFalse(recent['can_manage_assets'])
 
     def test_kpi_query_budget(self):
         # 12 count queries plus ORM flush overhead; a regression that loads

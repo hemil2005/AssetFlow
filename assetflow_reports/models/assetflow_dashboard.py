@@ -31,16 +31,23 @@ class AssetflowDashboard(models.TransientModel):
         maintenance_assets = self.env['assetflow.asset'].search_count([('state', '=', 'maintenance')])
         day_start = fields.Datetime.to_datetime(today)
         day_end = day_start + timedelta(days=1)
-        approved_today = self.env['assetflow.maintenance.request'].search_count([
+        approved_today_ids = self.env['assetflow.maintenance.request'].search([
             ('state', 'in', ('approved', 'assigned', 'in_progress')),
             ('approved_at', '>=', day_start),
             ('approved_at', '<', day_end),
-        ])
+        ]).asset_id.ids
+        maintenance_today = maintenance_assets
+        if approved_today_ids:
+            extra = self.env['assetflow.asset'].search_count([
+                ('state', '!=', 'maintenance'),
+                ('id', 'in', approved_today_ids),
+            ])
+            maintenance_today += extra
 
         return {
             'assets_available': self.env['assetflow.asset'].search_count([('state', '=', 'available')]),
             'assets_allocated': self.env['assetflow.asset'].search_count([('state', '=', 'allocated')]),
-            'maintenance_today': maintenance_assets + approved_today,
+            'maintenance_today': maintenance_today,
             'active_bookings': self.env['assetflow.booking'].search_count([('state', '=', 'ongoing')]),
             'pending_transfers': self.env['assetflow.transfer'].search_count([('state', '=', 'requested')]),
             'upcoming_returns': allocation_model.search_count([
@@ -114,6 +121,9 @@ class AssetflowDashboard(models.TransientModel):
                 }
                 for entry in log_entries
             ],
+            'can_manage_assets': self.env.user.has_group(
+                'assetflow_base.group_assetflow_asset_manager'
+            ) or self.env.user.has_group('assetflow_base.group_assetflow_admin'),
             'generated_at': fields.Datetime.to_string(fields.Datetime.now()),
         }
 

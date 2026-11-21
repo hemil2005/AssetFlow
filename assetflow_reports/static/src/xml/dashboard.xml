@@ -9,7 +9,7 @@
                 </div>
                 <div class="af-dashboard-actions">
                     <button class="btn btn-secondary" t-on-click="load">Refresh</button>
-                    <button class="btn btn-primary" t-if="canManageAssets" t-on-click="newAsset">Register Asset</button>
+                    <button class="btn btn-primary" t-if="state.data.can_manage_assets" t-on-click="newAsset">Register Asset</button>
                     <button class="btn btn-primary" t-on-click="newBooking">Book Resource</button>
                     <button class="btn btn-primary" t-on-click="newMaintenance">Raise Maintenance</button>
                 </div>

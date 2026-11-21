@@ -171,3 +171,13 @@ class TestAssetflowAudit(TransactionCase):
         }).with_user(self.manager)
         with self.assertRaises(UserError):
             cycle.action_start()
+
+    def test_audit_menu_is_role_gated(self):
+        menu = self.env.ref('assetflow_audit.menu_assetflow_audit')
+        employee_group = self.env.ref('assetflow_base.group_assetflow_employee')
+        self.assertNotIn(employee_group, menu.group_ids)
+        self.assertIn(
+            self.env.ref('assetflow_base.group_assetflow_asset_manager'), menu.group_ids,
+        )
+        my_audits = self.env.ref('assetflow_audit.action_assetflow_my_audits')
+        self.assertEqual(my_audits.domain, "[('auditor_ids.user_id', '=', uid)]")

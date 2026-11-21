@@ -103,7 +103,11 @@
         <field name="res_model">assetflow.audit.cycle</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_assetflow_audit_cycle_search"/>
-        <field name="group_ids" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager')), (4, ref('assetflow_base.group_assetflow_admin')), (4, ref('assetflow_base.group_assetflow_department_head'))]"/>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('assetflow_base.group_assetflow_asset_manager'),
+            ref('assetflow_base.group_assetflow_admin'),
+            ref('assetflow_base.group_assetflow_department_head'),
+        ])]"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Create an audit cycle to verify assets.</p>
         </field>
