@@ -50,6 +50,35 @@ class TestAssetflowBooking(TransactionCase):
         self._book(0, 1)
         self.assertTrue(self._book(1, 2).id)
 
+    def test_employee_cannot_overlap_another_users_booking(self):
+        self._book(0, 1)
+        other_user = self.env['res.users'].create({
+            'name': 'Other Booker', 'login': 'af_booking_other',
+            'group_ids': [(6, 0, [self.env.ref('assetflow_base.group_assetflow_employee').id])],
+        })
+        other_employee = self.env['assetflow.employee'].create({
+            'name': 'Raj', 'email': 'raj.booking@assetflow.test',
+            'department_id': self.department.id, 'user_id': other_user.id,
+        })
+        start, end = self._slot(0, 2)
+        with self.assertRaises(ValidationError):
+            self.env['assetflow.booking'].with_user(other_user).create({
+                'asset_id': self.asset.id,
+                'employee_id': other_employee.id,
+                'start_datetime': start,
+                'end_datetime': end,
+            })
+
+    def test_create_cannot_forge_state(self):
+        booking = self.env['assetflow.booking'].with_user(self.manager).create({
+            'asset_id': self.asset.id,
+            'employee_id': self.employee.id,
+            'start_datetime': self._slot(2, 3)[0],
+            'end_datetime': self._slot(2, 3)[1],
+            'state': 'completed',
+        })
+        self.assertEqual(booking.state, 'upcoming')
+
     def test_overlap_rejected(self):
         self._book(0, 1)
         with self.assertRaises(ValidationError):

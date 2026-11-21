@@ -66,6 +66,24 @@ class TestAssetflowAssets(TransactionCase):
         with self.assertRaises(UserError):
             allocation.with_context(allow_state_write=False).write({'state': 'returned'})
 
+    def test_create_cannot_forge_lifecycle_fields(self):
+        with self.assertRaises(UserError):
+            self.env['assetflow.asset'].with_user(self.manager).create({
+                'name': 'Forged lost', 'asset_tag': 'AF-FORGED-1',
+                'category_id': self.category.id, 'state': 'lost',
+            })
+        with self.assertRaises(UserError):
+            self.env['assetflow.asset'].with_user(self.manager).create({
+                'name': 'Forged holder', 'asset_tag': 'AF-FORGED-2',
+                'category_id': self.category.id, 'holder_employee_id': self.employee.id,
+            })
+
+    def test_active_allocation_cannot_be_deleted(self):
+        asset = self.asset.with_user(self.manager)
+        asset.action_allocate(employee=self.employee)
+        with self.assertRaises(UserError):
+            asset.allocation_ids.unlink()
+
     def test_transfer_requires_active_allocation(self):
         transfer = self.env['assetflow.transfer'].with_user(self.manager).create({
             'asset_id': self.asset.id, 'to_employee_id': self.other_employee.id,

@@ -151,9 +151,22 @@ class AssetflowAllocation(models.Model):
             })
         return allocations
 
+    @api.ondelete(at_uninstall=False)
+    def _unlink_only_returned(self):
+        if any(allocation.state != 'returned' for allocation in self):
+            raise UserError(_('Only returned allocations can be deleted; active history stays.'))
+
     def write(self, vals):
         if not self.env.context.get('allow_state_write') and {'state', 'asset_id', 'start_datetime'} & set(vals):
             raise UserError(_('Use asset allocation actions to change these fields.'))
+        if (
+            not self.env.context.get('allow_state_write')
+            and {'employee_id', 'department_id'} & set(vals)
+            and any(allocation.state == 'active' for allocation in self)
+            and not self.env.user.has_group('assetflow_base.group_assetflow_asset_manager')
+            and not self.env.user.has_group('assetflow_base.group_assetflow_admin')
+        ):
+            raise UserError(_('Only an Asset Manager can change the holder of an active allocation.'))
         result = super().write(vals)
         if {'employee_id', 'department_id', 'expected_return_date', 'state'} & set(vals):
             for allocation in self.filtered(lambda record: record.state == 'active'):

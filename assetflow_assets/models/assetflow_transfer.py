@@ -74,10 +74,11 @@ class AssetflowTransfer(models.Model):
     def action_approve(self):
         for transfer in self:
             transfer._require_decider()
-            if transfer.state != 'requested':
-                raise UserError(_('Only a requested transfer can be approved.'))
             asset = transfer.asset_id
             asset.lock_for_update()
+            transfer.invalidate_recordset(['state'])
+            if transfer.state != 'requested':
+                raise UserError(_('Only a requested transfer can be approved.'))
             active = asset._active_allocation()
             if not active:
                 raise UserError(_('Asset %s has no active allocation to transfer.', asset.asset_tag))

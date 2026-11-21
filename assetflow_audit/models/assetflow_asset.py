@@ -13,9 +13,19 @@ class AssetflowAsset(models.Model):
         for asset in self:
             asset.audit_count = len(asset.audit_line_ids)
 
+    @api.private
+    def _require_audit_manager(self):
+        if not (
+            self.env.user.has_group('assetflow_base.group_assetflow_asset_manager')
+            or self.env.user.has_group('assetflow_base.group_assetflow_admin')
+        ):
+            raise UserError(_('Only an Asset Manager or Administrator can apply audit results.'))
+
+    @api.private
     def action_audit_mark_lost(self, reason=None):
         """Trusted audit-close transition; the caller is the audit workflow."""
         for asset in self:
+            self._require_audit_manager()
             asset.lock_for_update()
             if asset.state not in ('available', 'reserved'):
                 raise UserError(_('Audit close cannot mark %s lost from %s.', asset.asset_tag, asset.state))
@@ -25,7 +35,9 @@ class AssetflowAsset(models.Model):
                 'update', asset, _('Asset %s marked lost by audit', asset.asset_tag),
             )
 
+    @api.private
     def action_audit_mark_damaged(self, note=None):
         for asset in self:
+            self._require_audit_manager()
             asset.write({'condition': 'damaged'})
             asset.message_post(body=note or _('Marked damaged by an audit.'))

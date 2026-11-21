@@ -181,3 +181,17 @@ class TestAssetflowAudit(TransactionCase):
         )
         my_audits = self.env.ref('assetflow_audit.action_assetflow_my_audits')
         self.assertEqual(my_audits.domain, "[('auditor_ids.user_id', '=', uid)]")
+
+    def test_department_head_cannot_apply_audit_lost_directly(self):
+        head_user = self.env['res.users'].create({
+            'name': 'IT Head', 'login': 'af_audit_head',
+            'group_ids': [(6, 0, [self.env.ref(
+                'assetflow_base.group_assetflow_department_head',
+            ).id])],
+        })
+        self.env['assetflow.employee'].create({
+            'name': 'IT Head', 'email': 'it.head@assetflow.test',
+            'department_id': self.department.id, 'user_id': head_user.id,
+        })
+        with self.assertRaises(UserError):
+            self.asset.with_user(head_user).action_audit_mark_lost(reason='bypass')

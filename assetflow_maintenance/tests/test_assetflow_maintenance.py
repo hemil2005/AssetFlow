@@ -248,3 +248,17 @@ class TestAssetflowMaintenance(TransactionCase):
         with self.assertRaises(UserError):
             request.with_user(self.manager_user).action_approve()
         self.assertEqual(asset.state, 'reserved')
+
+    def test_create_request_cannot_forge_state(self):
+        asset = self._create_asset('Forged Laptop', 'AF-9010')
+        asset.with_user(self.manager_user).action_allocate(employee=self.employee)
+        request = self.env['assetflow.maintenance.request'].with_user(self.employee_user).create({
+            'name': 'Forged approval',
+            'asset_id': asset.id,
+            'raised_by_id': self.employee.id,
+            'description': 'Should still be pending',
+            'state': 'approved',
+            'approved_by': self.manager_user.id,
+        })
+        self.assertEqual(request.state, 'pending')
+        self.assertFalse(request.approved_by)
