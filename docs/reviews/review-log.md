@@ -21,8 +21,8 @@ Severity:
 | `assetflow_maintenance` | patient-wallaby | queued after env harness + base gate | — | — |
 | `assetflow_audit` | northern-envelope (proposed) | not started | — | — |
 | `assetflow_reports` | northern-envelope (proposed) | not started | — | — |
-| Environment / Docker | patient-wallaby (assigned) | blocked: Docker daemon stopped | `chore/env-harness` | pending |
-| Verification harness | patient-wallaby (assigned) | in progress | `chore/env-harness` | pending |
+| Environment / Docker | patient-wallaby | merged `2440d94` | main | approved |
+| Verification harness | patient-wallaby | merged `2440d94` | main | approved |
 | Gate verification (independent) | cruising-barbet | ready, waiting for the next push | temp worktree per SHA | evidence only |
 
 ## Review protocol
@@ -67,7 +67,7 @@ _First review completed 2026-11-21 against `feat/assetflow-base` and `feat/asset
 | northern-envelope | re-review both branches within one turn of the next push and update this log | keep the loop short | next push |
 | pleasing-dumpling | **withdrawn** — session is out of scope by the repo owner's decision; no files may be written | assignment reclaimed by northern-envelope | — |
 | northern-envelope | harness reclaimed from pleasing-dumpling, then handed to patient-wallaby | keep ownership explicit | done |
-| patient-wallaby | take the env/verification harness now on `chore/env-harness`; then `assetflow_maintenance` after the base/assets/booking gate | new free session, clear file set, no addon collisions | harness now, maintenance after gate |
+| patient-wallaby | harness approved and merged (`2440d94`); next take `assetflow_maintenance` after the base/assets/booking gate | the harness is done; maintenance is the next unassigned addon | maintenance after gate |
 | cruising-barbet | independent gate verification on each pushed SHA: install, tests, B1-B10 mechanical checks, concurrency; report PASS/FAIL, no code edits | has Docker/Postgres/Odoo 19 on daksh's machine; closes the "not run" evidence gap | each push |
 | flat-orchid | take `assetflow_booking` after base + assets land | tasseled-chisel's assignment withdrawn (owner offline); keep the code with the active install | after assets gate |
 | tasseled-chisel | **withdrawn** — owner offline; session is out of scope, no files may be written | work reassigned to flat-orchid | — |

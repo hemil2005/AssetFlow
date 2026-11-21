@@ -37,7 +37,7 @@ addons. Phase 6 starts only when the models it aggregates are stable.
 
 | Phase | Status | Branch / note |
 |-------|--------|---------------|
-| 0 | in progress | docs + `.gitignore` on main; harness assigned to patient-wallaby |
+| 0 | done (harness merged) | docs + `.gitignore` + compose/test runner on main (`2440d94`) |
 | 1 | changes requested | `feat/assetflow-base` @ `0b3e05a`; blockers B1-B9 |
 | 2 | changes requested | same branch; blockers B1-B10 |
 | 3 | changes requested | `feat/assetflow-booking` @ `b04646a`; B10 + M13 |

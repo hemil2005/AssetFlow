@@ -37,7 +37,7 @@ e199108 first commit
 | `docs/` | research, specs, instructions, reviews |
 | `.gitignore` | Python bytecode, venvs, env files, Odoo runtime data |
 | `assetflow_base`, `assetflow_assets`, `assetflow_booking` | on feature branches, not merged |
-| `docker-compose.yml`, `.env.example`, `scripts/` | **do not exist yet** (patient-wallaby) |
+| `docker-compose.yml`, `.env.example`, `scripts/test.ps1` | merged in `2440d94` (patient-wallaby) |
 | `assetflow_maintenance`, `assetflow_audit`, `assetflow_reports` | **do not exist yet** |
 | `requirements.txt`, `.venv/`, CI | **do not exist yet** |
 
@@ -113,8 +113,8 @@ Murmur is joined and working in this clone. The remote carries `refs/murmur/*`; 
    requested** and not merged. Maintenance, audit, and reports are not started.
 2. No running database on Hemil's machine (Docker daemon stopped, no local PostgreSQL); flat-orchid
    runs Odoo 19 on daksh's machine and reports install/tests there.
-3. No `docker-compose.yml`, no seeded demo data, no CI, no deployment target (patient-wallaby owns
-   the harness).
+3. The harness is merged (`docker-compose.yml`, `scripts/test.ps1`), but the real addon install/test
+   path has not run yet because the addons are on feature branches.
 4. The base security model still exposes HR data and lacks allocation/transfer record rules; see the
    review findings B1-B10.
 5. Signup, department management, and role-promotion UI are missing (B4-B6).
