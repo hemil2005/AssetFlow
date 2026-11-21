@@ -23,9 +23,9 @@ class AssetflowBooking(models.Model):
         'assetflow.asset', string='Resource', required=True, ondelete='restrict',
         domain=[('is_bookable', '=', True)],
     )
-    employee_id = fields.Many2one('hr.employee', string='Booked For', required=True, ondelete='restrict')
+    employee_id = fields.Many2one('assetflow.employee', string='Booked For', required=True, ondelete='restrict')
     department_id = fields.Many2one(
-        'hr.department', string='Department', related='employee_id.department_id', store=True,
+        'assetflow.department', string='Department', related='employee_id.department_id', store=True,
     )
     start_datetime = fields.Datetime(string='Start', required=True)
     end_datetime = fields.Datetime(string='End (exclusive)', required=True)
@@ -38,10 +38,22 @@ class AssetflowBooking(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         asset_ids = {vals['asset_id'] for vals in vals_list if vals.get('asset_id')}
-        self.env['assetflow.asset'].browse(asset_ids).lock_for_update()
-        return super().create(vals_list)
+        assets = self.env['assetflow.asset'].browse(asset_ids)
+        assets.lock_for_update()
+        for asset in assets:
+            if not asset.is_bookable:
+                raise ValidationError(_('Only a shared/bookable resource can be booked.'))
+            if asset.state not in ('available', 'reserved'):
+                raise ValidationError(_(
+                    'Asset %s is %s and cannot be booked.', asset.asset_tag, asset.state,
+                ))
+        bookings = super().create(vals_list)
+        bookings._sync_asset_state()
+        return bookings
 
     def write(self, vals):
+        if not self.env.context.get('allow_state_write') and 'state' in vals:
+            raise UserError(_('Use the booking actions or cron to change booking state.'))
         if {'asset_id', 'start_datetime', 'end_datetime'} & set(vals):
             asset_ids = set(self.mapped('asset_id').ids)
             if vals.get('asset_id'):
@@ -80,7 +92,7 @@ class AssetflowBooking(models.Model):
                 'assetflow_base.group_assetflow_asset_manager'
             ):
                 raise UserError(_('Only an Asset Manager can cancel an ongoing booking.'))
-            booking.write({
+            booking.with_context(allow_state_write=True).write({
                 'state': 'cancelled',
                 'cancel_reason': reason or booking.cancel_reason,
                 'cancelled_by': self.env.user.id,
@@ -92,17 +104,30 @@ class AssetflowBooking(models.Model):
         for asset in self.mapped('asset_id'):
             if asset.state not in ('available', 'reserved'):
                 continue
-            ongoing = self.search_count([('asset_id', '=', asset.id), ('state', '=', 'ongoing')])
-            if ongoing:
-                asset._set_state('reserved')
+            now = fields.Datetime.now()
+            current = self.search_count([
+                ('asset_id', '=', asset.id), ('state', '=', 'ongoing'),
+                ('start_datetime', '<=', now), ('end_datetime', '>', now),
+            ])
+            if current:
+                asset.action_reserve()
             elif asset.state == 'reserved':
-                asset._set_state('available')
+                upcoming_overlap = self.search_count([
+                    ('asset_id', '=', asset.id), ('state', '=', 'upcoming'),
+                    ('start_datetime', '<=', now), ('end_datetime', '>', now),
+                ])
+                if not upcoming_overlap:
+                    asset.action_release()
 
     @api.model
     def _cron_sync_states(self):
         now = fields.Datetime.now()
-        self.search([('state', '=', 'upcoming'), ('start_datetime', '<=', now)]).write({'state': 'ongoing'})
-        self.search([('state', '=', 'ongoing'), ('end_datetime', '<=', now)]).write({'state': 'completed'})
+        self.with_context(allow_state_write=True).search([
+            ('state', '=', 'upcoming'), ('start_datetime', '<=', now),
+        ]).write({'state': 'ongoing'})
+        self.with_context(allow_state_write=True).search([
+            ('state', '=', 'ongoing'), ('end_datetime', '<=', now),
+        ]).write({'state': 'completed'})
         self.search([('state', 'in', ['ongoing', 'completed'])])._sync_asset_state()
 
     @api.model
@@ -116,6 +141,11 @@ class AssetflowBooking(models.Model):
             ('start_datetime', '<=', soon),
         ]):
             booking.reminder_sent = True
-            booking.asset_id.message_post(
-                body=_('Booking reminder: %s starts at %s.', booking.asset_id.name, booking.start_datetime),
+            self.env['assetflow.notification']._notify(
+                booking.employee_id.user_id,
+                _('Booking reminder: %s', booking.asset_id.name),
+                _('%s starts at %s.', booking.asset_id.name, booking.start_datetime),
+                notification_type='booking_reminder',
+                res_model='assetflow.booking',
+                res_id=booking.id,
             )
