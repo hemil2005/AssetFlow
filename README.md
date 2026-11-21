@@ -31,15 +31,36 @@ Start at [`docs/README.md`](docs/README.md). The short version:
 
 ## Local development
 
-The full setup is in [`docs/research/environment-setup.md`](docs/research/environment-setup.md).
-Docker route:
+Docker route (recommended on Windows). Start Docker Desktop and wait for "Engine running", then:
 
 ```powershell
-docker compose up -d
-# open http://localhost:8069, create database "assetflow", install the addons in order
+Copy-Item .env.example .env   # set POSTGRES_PASSWORD; .env is git-ignored
+docker compose up -d          # Odoo 19 Community + PostgreSQL 16
 ```
 
-Source route and Windows notes are in the same document.
+Open <http://localhost:8069>, create the database `assetflow` with demo data **off**, then install
+the addons in dependency order: `assetflow_base`, `assetflow_assets`, `assetflow_booking`,
+`assetflow_maintenance`, `assetflow_audit`, `assetflow_reports`.
+
+`docker-compose.yml` mounts the repo root at `/mnt/extra-addons`, so the addons at the repo root are
+picked up directly, and runs Odoo with `--dev=all` so Python and XML reload on change. Manifest
+changes and new files still need `docker compose restart odoo`. PostgreSQL and Odoo state live in
+named volumes; `docker compose down -v` wipes them.
+
+Install and test from the command line (dependency order, stops at the first failure, logs under
+`odoo-data/logs/`):
+
+```powershell
+./scripts/test.ps1                        # install all six, then test each
+./scripts/test.ps1 -Addon assetflow_base  # one addon
+./scripts/test.ps1 -SkipInstall           # tests only
+```
+
+If PowerShell refuses to run the script, use
+`powershell -ExecutionPolicy Bypass -File scripts/test.ps1`.
+
+The source route, Windows `wkhtmltopdf` notes and troubleshooting are in
+[`docs/research/environment-setup.md`](docs/research/environment-setup.md).
 
 ## Contributing
 
