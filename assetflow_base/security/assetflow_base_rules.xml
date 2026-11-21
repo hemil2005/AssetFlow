@@ -1,5 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="assetflow_department_read_rule" model="ir.rule">
+        <field name="name">AssetFlow: employees can read departments</field>
+        <field name="model_id" ref="model_assetflow_department"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <record id="assetflow_category_read_rule" model="ir.rule">
+        <field name="name">AssetFlow: employees can read asset categories</field>
+        <field name="model_id" ref="model_assetflow_category"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <record id="assetflow_activity_log_manager_rule" model="ir.rule">
+        <field name="name">AssetFlow: managers and administrators read the activity log</field>
+        <field name="model_id" ref="model_assetflow_activity_log"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager'))]"/>
+    </record>
+
+    <record id="assetflow_activity_log_admin_rule" model="ir.rule">
+        <field name="name">AssetFlow: administrators read all activity logs</field>
+        <field name="model_id" ref="model_assetflow_activity_log"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_admin'))]"/>
+    </record>
+
     <record id="assetflow_employee_own_rule" model="ir.rule">
         <field name="name">AssetFlow: employees see their own directory record</field>
         <field name="model_id" ref="model_assetflow_employee"/>
