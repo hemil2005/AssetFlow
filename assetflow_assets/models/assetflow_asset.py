@@ -102,13 +102,6 @@ class AssetflowAsset(models.Model):
             raise UserError(_('Use the asset workflow actions to change lifecycle fields.'))
         return super().write(vals)
 
-    @api.constrains('expected_return_date')
-    def _check_expected_return(self):
-        today = fields.Date.context_today(self)
-        for asset in self:
-            if asset.expected_return_date and asset.expected_return_date < today:
-                raise ValidationError(_('Expected return cannot be in the past.'))
-
     @api.private
     def _active_allocation(self):
         return self.env['assetflow.allocation'].search([

@@ -104,14 +104,17 @@ class TestAssetflowAssets(TransactionCase):
         with self.assertRaises(UserError):
             self.asset.with_user(self.manager).write({'asset_tag': 'HACK-9'})
 
-    @mute_logger('odoo.sql_db')
-    def test_asset_rejects_past_expected_return(self):
+    def test_past_expected_return_is_overdue_not_rejected(self):
+        yesterday = fields.Date.to_string(fields.Date.today() - timedelta(days=1))
         with self.assertRaises(UserError):
-            self.asset.with_user(self.manager).write({'expected_return_date': '2020-01-01'})
-        with self.assertRaises(ValidationError), self.env.cr.savepoint():
-            self.asset.with_user(self.manager).with_context(allow_state_write=True).write({
-                'expected_return_date': '2020-01-01',
-            })
+            self.asset.with_user(self.manager).write({'expected_return_date': yesterday})
+        asset = self.asset.with_user(self.manager)
+        asset.action_allocate(employee=self.employee, expected_return_date=yesterday)
+        self.assertEqual(asset.expected_return_date, fields.Date.from_string(yesterday))
+        self.assertTrue(asset.is_overdue)
+        # The workflow write guard is untouched: only the date restriction was removed.
+        asset.with_context(allow_state_write=True).write({'expected_return_date': yesterday})
+        self.assertTrue(asset.is_overdue)
 
     def test_allocation_derives_department_from_employee(self):
         self.asset.with_user(self.manager).action_allocate(employee=self.employee)
