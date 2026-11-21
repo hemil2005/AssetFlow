@@ -167,6 +167,8 @@
                             <h2 class="af-section-title">Unread notifications</h2>
                             <span class="af-count" t-if="state.data.recent_notifications.length"
                                   t-out="state.data.recent_notifications.length"></span>
+                            <button class="af-link-button" t-if="state.data.unread_notifications"
+                                    t-on-click="markAllRead">Mark all read</button>
                         </div>
                         <ul class="af-feed" t-if="state.data.recent_notifications.length">
                             <li class="af-feed-item" t-foreach="state.data.recent_notifications"
@@ -180,6 +182,25 @@
                             </li>
                         </ul>
                         <p class="af-empty" t-else="">You are all caught up.</p>
+                    </section>
+
+                    <section class="af-section">
+                        <div class="af-section-head">
+                            <h2 class="af-section-title">Recent activity</h2>
+                            <span class="af-count" t-if="state.data.recent_log.length"
+                                  t-out="state.data.recent_log.length"></span>
+                        </div>
+                        <ul class="af-feed" t-if="state.data.recent_log.length">
+                            <li class="af-feed-item" t-foreach="state.data.recent_log"
+                                t-as="entry" t-key="entry.id">
+                                <div class="af-feed-head">
+                                    <strong class="af-feed-title" t-out="entry.action"></strong>
+                                    <span class="af-feed-type" t-out="entry.when"></span>
+                                </div>
+                                <p class="af-feed-body" t-if="entry.description" t-out="entry.description"/>
+                            </li>
+                        </ul>
+                        <p class="af-empty" t-else="">No recent activity for your role.</p>
                     </section>
                 </div>
 

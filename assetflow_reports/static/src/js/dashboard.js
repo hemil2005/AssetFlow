@@ -54,6 +54,11 @@ export class AssetflowDashboard extends Component {
         }
     }
 
+    async markAllRead() {
+        await this.orm.call("assetflow.notification", "action_mark_all_read", []);
+        await this.load();
+    }
+
     // --- presentation -----------------------------------------------------
 
     get canRegister() {

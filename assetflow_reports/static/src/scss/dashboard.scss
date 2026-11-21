@@ -337,6 +337,24 @@
     }
 }
 
+.af-link-button {
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--af-accent);
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+        color: var(--af-ink);
+    }
+}
+
 .af-table {
     width: 100%;
     border-collapse: collapse;
