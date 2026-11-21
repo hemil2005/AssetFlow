@@ -72,7 +72,10 @@ class AssetflowDashboard(models.TransientModel):
     @api.model
     def get_recent_activity(self, limit=10):
         """Recent overdue/upcoming allocations, unread notifications, log rows."""
-        limit = min(int(limit or 10), 50)
+        try:
+            limit = min(int(limit or 10), 50)
+        except (TypeError, ValueError):
+            limit = 10
         today = fields.Date.context_today(self)
         week_end = today + timedelta(days=7)
         allocation_model = self.env['assetflow.allocation']
@@ -166,8 +169,8 @@ class AssetflowDashboard(models.TransientModel):
         except (ValueError, TypeError):
             locale = Locale.parse('en_US')
         names = [get_day_names('abbreviated', locale=locale)[index] for index in range(7)]
-        first = locale.first_week_day
-        labels = names[first:] + names[:first]
+        # Odoo's day_of_week is Sunday=0 (isoweekday % 7), while babel lists Monday first.
+        labels = names[6:] + names[:6]
 
         total = sum(sum(row) for row in grid)
         return {

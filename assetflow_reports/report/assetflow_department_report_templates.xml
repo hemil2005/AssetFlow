@@ -11,6 +11,10 @@
                             <strong>Members:</strong> <span t-out="doc.member_count"/>
                         </p>
                         <t t-set="assets" t-value="doc.report_asset_rows()"/>
+                        <t t-set="asset_total" t-value="doc.env['assetflow.asset'].search_count([
+                            ('department_id', '=', doc.id),
+                            ('state', '!=', 'disposed'),
+                        ])"/>
                         <table class="table table-sm">
                             <thead>
                                 <tr>
@@ -33,6 +37,10 @@
                                 </tr>
                             </tbody>
                         </table>
+                        <p class="mt-2 text-muted">
+                            Showing <span t-out="len(assets)"/> of <span t-out="asset_total"/> asset(s).
+                            <t t-if="asset_total &gt; len(assets)">Only the first 500 are printed; refine the department scope.</t>
+                        </p>
                         <p t-if="not assets" class="text-muted">No assets in this department.</p>
                     </div>
                 </t>

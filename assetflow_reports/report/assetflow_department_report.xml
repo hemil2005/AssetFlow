@@ -8,6 +8,6 @@
         <field name="report_file">assetflow_reports.report_department_allocation</field>
         <field name="binding_model_id" ref="assetflow_base.model_assetflow_department"/>
         <field name="binding_type">report</field>
-        <field name="group_ids" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager'))]"/>
+        <field name="group_ids" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager')), (4, ref('assetflow_base.group_assetflow_department_head'))]"/>
     </record>
 </odoo>
