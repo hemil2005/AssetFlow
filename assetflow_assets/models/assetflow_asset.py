@@ -93,6 +93,22 @@ class AssetflowAsset(models.Model):
             )
             asset.history_count = len(asset.allocation_ids) + extra
 
+    def write(self, vals):
+        if 'asset_tag' in vals:
+            raise UserError(_('An asset tag is generated once and cannot be changed.'))
+        if not self.env.context.get('allow_state_write') and {
+            'state', 'holder_employee_id', 'expected_return_date',
+        } & set(vals):
+            raise UserError(_('Use the asset workflow actions to change lifecycle fields.'))
+        return super().write(vals)
+
+    @api.constrains('expected_return_date')
+    def _check_expected_return(self):
+        today = fields.Date.context_today(self)
+        for asset in self:
+            if asset.expected_return_date and asset.expected_return_date < today:
+                raise ValidationError(_('Expected return cannot be in the past.'))
+
     @api.private
     def _active_allocation(self):
         return self.env['assetflow.allocation'].search([
@@ -136,7 +152,7 @@ class AssetflowAsset(models.Model):
             ))
         if require_note and not note:
             raise UserError(_('A reason is required for this transition.'))
-        self.write({'state': new_state})
+        self.with_context(allow_state_write=True).write({'state': new_state})
         self.env['assetflow.activity.log']._log_activity(
             'update', self, _('Asset %s moved to %s', self.asset_tag, new_state),
         )
@@ -153,6 +169,7 @@ class AssetflowAsset(models.Model):
             raise ValidationError(_('Asset %s is booked right now.', self.asset_tag))
         if not employee and not department:
             raise ValidationError(_('Select an employee or a department to allocate to.'))
+        department = department or (employee.department_id if employee else False)
         self.env['assetflow.allocation'].create({
             'asset_id': self.id,
             'employee_id': employee.id if employee else False,
@@ -180,7 +197,7 @@ class AssetflowAsset(models.Model):
             'checkin_condition': condition,
             'checkin_notes': notes,
         })
-        self.write({
+        self.with_context(allow_state_write=True).write({
             'state': 'available', 'holder_employee_id': False, 'expected_return_date': False,
         })
         self.env['assetflow.activity.log']._log_activity(
@@ -206,17 +223,19 @@ class AssetflowAsset(models.Model):
             'context': {'default_asset_id': self.id},
         }
 
+    @api.private
     def action_reserve(self):
-        """Public workflow method used by booking; no UI permission of its own."""
+        """Internal workflow hook called by booking through an explicit sudo boundary."""
         for asset in self:
             if asset.state == 'available':
-                asset.write({'state': 'reserved'})
+                asset.with_context(allow_state_write=True).write({'state': 'reserved'})
 
+    @api.private
     def action_release(self):
-        """Public workflow method used by booking; no UI permission of its own."""
+        """Internal workflow hook called by booking through an explicit sudo boundary."""
         for asset in self:
             if asset.state == 'reserved':
-                asset.write({'state': 'available'})
+                asset.with_context(allow_state_write=True).write({'state': 'available'})
 
     def action_set_maintenance(self, reason=None):
         self._transition('maintenance', ['available', 'allocated', 'reserved'],
@@ -233,6 +252,22 @@ class AssetflowAsset(models.Model):
     def action_dispose(self, reason=None):
         self._transition('disposed', ['available', 'reserved', 'maintenance', 'lost', 'retired'],
                          note=reason or self.transition_reason, admin_only=True, require_note=True)
+
+    @api.private
+    def action_restore_after_maintenance(self, target_state):
+        """Internal workflow hook for maintenance resolve; no group check of its own."""
+        for asset in self:
+            if asset.state != 'maintenance':
+                raise UserError(_('Only an asset under maintenance can be restored.'))
+            if target_state not in ('available', 'allocated'):
+                raise UserError(_('Maintenance can only restore to available or allocated.'))
+            if target_state == 'allocated' and not asset._active_allocation():
+                raise UserError(_('Cannot restore to allocated without an active allocation.'))
+            # Trust boundary: a technician may resolve without asset write rights.
+            asset.sudo().with_context(allow_state_write=True).write({'state': target_state})
+            self.env['assetflow.activity.log']._log_activity(
+                'resolve', asset, _('Maintenance resolved; asset restored to %s', target_state),
+            )
 
     def action_archive(self):
         self._require_admin()

@@ -33,11 +33,20 @@ class AssetflowTransfer(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        user = self.env.user
         for vals in vals_list:
             asset = self.env['assetflow.asset'].browse(vals.get('asset_id'))
-            if asset:
-                active = asset._active_allocation()
-                vals.setdefault('from_employee_id', active.employee_id.id if active else False)
+            if not asset:
+                continue
+            active = asset._active_allocation()
+            vals.setdefault('from_employee_id', active.employee_id.id if active else False)
+            is_privileged = user.has_group('assetflow_base.group_assetflow_asset_manager') or (
+                user.has_group('assetflow_base.group_assetflow_department_head')
+                and user.employee_id.department_id
+                and asset.department_id == user.employee_id.department_id
+            )
+            if not is_privileged and not (active and active.employee_id.user_id == user):
+                raise UserError(_('Only the current holder or an Asset Manager can transfer this asset.'))
         return super().create(vals_list)
 
     @api.constrains('to_employee_id', 'to_department_id')
@@ -75,7 +84,7 @@ class AssetflowTransfer(models.Model):
             active.with_context(allow_state_write=True).write({
                 'state': 'returned', 'return_datetime': fields.Datetime.now(),
             })
-            asset.write({
+            asset.with_context(allow_state_write=True).write({
                 'state': 'available', 'holder_employee_id': False, 'expected_return_date': False,
             })
             asset.action_allocate(

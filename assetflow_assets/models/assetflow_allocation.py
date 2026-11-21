@@ -73,6 +73,9 @@ class AssetflowAllocation(models.Model):
         assets.lock_for_update()
         for vals in vals_list:
             asset = self.env['assetflow.asset'].browse(vals.get('asset_id'))
+            if vals.get('employee_id') and not vals.get('department_id'):
+                employee = self.env['assetflow.employee'].browse(vals['employee_id'])
+                vals['department_id'] = employee.department_id.id
             if not (vals.get('employee_id') or vals.get('department_id')):
                 raise ValidationError(_('Choose an employee or a department.'))
             if asset.state != 'available':
@@ -83,7 +86,7 @@ class AssetflowAllocation(models.Model):
                 raise ValidationError(_('Asset %s is booked right now.', asset.asset_tag))
         allocations = super().create(vals_list)
         for allocation in allocations:
-            allocation.asset_id.write({
+            allocation.asset_id.with_context(allow_state_write=True).write({
                 'state': 'allocated',
                 'holder_employee_id': allocation.employee_id.id,
                 'expected_return_date': allocation.expected_return_date,
@@ -93,7 +96,16 @@ class AssetflowAllocation(models.Model):
     def write(self, vals):
         if not self.env.context.get('allow_state_write') and {'state', 'asset_id', 'start_datetime'} & set(vals):
             raise UserError(_('Use asset allocation actions to change these fields.'))
-        return super().write(vals)
+        result = super().write(vals)
+        if self.env.context.get('allow_state_write') and {
+            'employee_id', 'department_id', 'expected_return_date', 'state',
+        } & set(vals):
+            for allocation in self.filtered(lambda record: record.state == 'active'):
+                allocation.asset_id.with_context(allow_state_write=True).write({
+                    'holder_employee_id': allocation.employee_id.id,
+                    'expected_return_date': allocation.expected_return_date,
+                })
+        return result
 
     def action_return(self):
         for allocation in self:

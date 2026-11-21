@@ -95,6 +95,36 @@ class TestAssetflowAssets(TransactionCase):
         with self.assertRaises(UserError):
             self.asset.with_user(self.employee_user).action_allocate(employee=self.employee)
 
+    def test_manager_cannot_write_state_or_tag_directly(self):
+        with self.assertRaises(UserError):
+            self.asset.with_user(self.manager).write({'state': 'disposed'})
+        with self.assertRaises(UserError):
+            self.asset.with_user(self.manager).write({'asset_tag': 'HACK-9'})
+
+    @mute_logger('odoo.sql_db')
+    def test_asset_rejects_past_expected_return(self):
+        with self.assertRaises(UserError):
+            self.asset.with_user(self.manager).write({'expected_return_date': '2020-01-01'})
+        with self.assertRaises(ValidationError), self.env.cr.savepoint():
+            self.asset.with_user(self.manager).with_context(allow_state_write=True).write({
+                'expected_return_date': '2020-01-01',
+            })
+
+    def test_allocation_derives_department_from_employee(self):
+        self.asset.with_user(self.manager).action_allocate(employee=self.employee)
+        allocation = self.asset.allocation_ids
+        self.assertEqual(allocation.department_id, self.department)
+
+    def test_employee_cannot_transfer_an_asset_they_do_not_hold(self):
+        bookable = self.env['assetflow.asset'].with_user(self.manager).create({
+            'name': 'Room', 'asset_tag': 'AF-ROOM-TEST', 'category_id': self.category.id,
+            'is_bookable': True,
+        })
+        with self.assertRaises(UserError):
+            self.env['assetflow.transfer'].with_user(self.employee_user).create({
+                'asset_id': bookable.id, 'to_employee_id': self.other_employee.id,
+            })
+
     def test_employee_cannot_see_other_allocation(self):
         self.asset.with_user(self.manager).action_allocate(employee=self.employee)
         other_user = self.env['res.users'].create({
