@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_assetflow_booking" name="Resource Booking"
+              parent="assetflow_base.menu_assetflow_root"
+              action="action_assetflow_booking" sequence="30"/>
+</odoo>

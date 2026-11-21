@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_assetflow_booking_list" model="ir.ui.view">
+        <field name="name">assetflow.booking.list</field>
+        <field name="model">assetflow.booking</field>
+        <field name="arch" type="xml">
+            <list string="Bookings">
+                <field name="asset_id"/>
+                <field name="employee_id"/>
+                <field name="department_id" optional="hide"/>
+                <field name="start_datetime"/>
+                <field name="end_datetime"/>
+                <field name="purpose" optional="hide"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_assetflow_booking_form" model="ir.ui.view">
+        <field name="name">assetflow.booking.form</field>
+        <field name="model">assetflow.booking</field>
+        <field name="arch" type="xml">
+            <form string="Booking">
+                <header>
+                    <button name="action_cancel" type="object" string="Cancel Booking"
+                            invisible="state == 'cancelled'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="upcoming,ongoing,completed,cancelled"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="asset_id"/>
+                            <field name="employee_id"/>
+                            <field name="department_id"/>
+                        </group>
+                        <group>
+                            <field name="start_datetime"/>
+                            <field name="end_datetime"/>
+                            <field name="reminder_sent" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Purpose">
+                        <field name="purpose" nolabel="1"/>
+                    </group>
+                    <group string="Cancellation" invisible="state != 'cancelled'">
+                        <field name="cancelled_by" readonly="1"/>
+                        <field name="cancel_reason" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_assetflow_booking_calendar" model="ir.ui.view">
+        <field name="name">assetflow.booking.calendar</field>
+        <field name="model">assetflow.booking</field>
+        <field name="arch" type="xml">
+            <calendar string="Resource Calendar" date_start="start_datetime"
+                      date_stop="end_datetime" color="employee_id">
+                <field name="asset_id"/>
+                <field name="state"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_assetflow_booking_search" model="ir.ui.view">
+        <field name="name">assetflow.booking.search</field>
+        <field name="model">assetflow.booking</field>
+        <field name="arch" type="xml">
+            <search string="Search Bookings">
+                <field name="asset_id"/>
+                <field name="employee_id"/>
+                <field name="department_id"/>
+                <filter string="Upcoming" name="upcoming" domain="[('state', '=', 'upcoming')]"/>
+                <filter string="Ongoing" name="ongoing" domain="[('state', '=', 'ongoing')]"/>
+                <filter string="Cancelled" name="cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <group>
+                    <filter string="Resource" name="group_by_asset" context="{'group_by': 'asset_id'}"/>
+                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_assetflow_booking" model="ir.actions.act_window">
+        <field name="name">Bookings</field>
+        <field name="res_model">assetflow.booking</field>
+        <field name="view_mode">calendar,list,form</field>
+        <field name="search_view_id" ref="view_assetflow_booking_search"/>
+    </record>
+</odoo>
