@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_assetflow_audit" name="Audits"
+              parent="assetflow_base.menu_assetflow_root" sequence="45"
+              groups="assetflow_base.group_assetflow_employee"/>
+
+    <menuitem id="menu_assetflow_audit_cycle" name="Audit Cycles"
+              parent="menu_assetflow_audit" action="action_assetflow_audit_cycle" sequence="10"/>
+
+    <menuitem id="menu_assetflow_audit_line" name="Audit Lines"
+              parent="menu_assetflow_audit" action="action_assetflow_audit_line" sequence="20"/>
+</odoo>
