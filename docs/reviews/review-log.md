@@ -15,15 +15,17 @@ Severity:
 | Workstream | Owner | State | Branch | Review |
 |------------|-------|-------|--------|--------|
 | Docs: research, spec, plan, instructions, ADRs | northern-envelope | complete, in review by team | local `docs/` | self-checked |
-| `assetflow_base` scaffold | flat-orchid | second review, B8/B10 open | `feat/assetflow-base` @ `5c831a5` | [second review](2026-11-21-second-review.md) |
-| `assetflow_assets` | flat-orchid | second review, B8/B10 open | `feat/assetflow-base` @ `5c831a5` | [second review](2026-11-21-second-review.md) |
-| `assetflow_booking` | flat-orchid | second review, B10 open | `feat/assetflow-booking` @ `55025a4` | [second review](2026-11-21-second-review.md) |
-| `assetflow_maintenance` | patient-wallaby | started, based on `5c831a5` | `feat/assetflow-maintenance` (local) | pending |
+| `assetflow_base` scaffold | flat-orchid | gate candidate `9054b46` | `gate/booking-fix` | B8 fixed, awaiting independent confirmation |
+| `assetflow_assets` | flat-orchid | gate candidate `9054b46` | `gate/booking-fix` | B8 fixed, awaiting independent confirmation |
+| `assetflow_booking` | flat-orchid | gate candidate `9054b46` | `gate/booking-fix` | B10 fixed; B8 fixed |
+| `assetflow_maintenance` | patient-wallaby | integrated, 18 tests green | `2602828` | reviewed |
+| `assetflow_audit` | northern-envelope | integrated, 10 tests green | `d364dfe` | pending independent review |
+| `assetflow_reports` | northern-envelope | integrated, 7 tests green | `2346d84` | pending independent review |
 | `assetflow_audit` | northern-envelope (proposed) | not started | — | — |
 | `assetflow_reports` | northern-envelope (proposed) | not started | — | — |
 | Environment / Docker | patient-wallaby | merged `2440d94` | main | approved |
 | Verification harness | patient-wallaby | merged `2440d94` | main | approved |
-| Gate verification (independent) | cruising-barbet | evidence on `0e1ad9c`: 17 tests pass, B1 then failed; re-running on `55025a4` | temp worktree per SHA | evidence only |
+| Gate verification (independent) | cruising-barbet | evidence on `0f4446d` (9 PASS / 1 FAIL B8); verifying `9054b46`/`2346d84` | temp worktree per SHA | evidence only |
 
 ## Review protocol
 
@@ -41,7 +43,8 @@ Severity:
 ## Finding log
 
 _First review: [`2026-11-21-base-assets-booking.md`](2026-11-21-base-assets-booking.md).
-Second review of `5c831a5` / `55025a4`: [`2026-11-21-second-review.md`](2026-11-21-second-review.md)._
+Second review: [`2026-11-21-second-review.md`](2026-11-21-second-review.md).
+Integration: [`2026-11-21-integration.md`](2026-11-21-integration.md) — six addons, 62 tests green._
 
 | ID | Severity | Area | Finding | Owner | State |
 |----|----------|------|---------|-------|-------|
@@ -51,11 +54,11 @@ Second review of `5c831a5` / `55025a4`: [`2026-11-21-second-review.md`](2026-11-
 | B4 | H | spec | signup missing | flat-orchid | **closed structurally** (test green) |
 | B5 | H | spec | department model/screen missing | flat-orchid | **closed structurally** |
 | B6 | H | spec | role promotion UI missing | flat-orchid | **closed structurally** |
-| B7 | H | lifecycle | unguarded transitions/destructive actions | flat-orchid | **reopened**: RPC can write `state`, `asset_tag`, past `expected_return_date` (probe) |
-| B8 | H | integrity | allocation edit/department sync; unallocated transfer; employee transfer target | flat-orchid | **open** |
+| B7 | H | lifecycle | unguarded transitions/destructive actions | flat-orchid | **closed**: write guard; residual client-spoofable `allow_state_write` context |
+| B8 | H | integrity | allocation edit/department sync; unallocated transfer; employee transfer target | flat-orchid | **fixed** in `376d90f`; independent confirmation pending |
 | B9 | H | spec | return condition/notes | flat-orchid | **closed** |
-| B10 | H | booking | immediate reserve; reminder crash without login | flat-orchid | **open** |
-| M7 | M | security | booking rules `noupdate="1"` | flat-orchid | **open** |
+| B10 | H | booking | immediate reserve; reminder crash without login | flat-orchid | **closed** in `0f4446d` |
+| M7 | M | security | booking rules `noupdate="1"` | flat-orchid | **closed** |
 | M3 | M | UI | notifications/activity log models exist; Screen 10 UI minimal | flat-orchid | deferred with reason |
 | M1/M2/M4/M5/M6/M8/M11/M13-M16 | M | mixed | field alignment, category code, archive, transfer states, head approvals, chatter, tests, TZ, private calls | flat-orchid | mostly fixed in the diff; verify in tests |
 

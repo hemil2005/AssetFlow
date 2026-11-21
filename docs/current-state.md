@@ -12,7 +12,7 @@ agent may have landed work.
 | Branch | `main`, tracking `origin/main` |
 | HEAD | `455b7b8 docs: implementation contracts...` |
 | Working tree | clean on `main`; addon work is on feature branches |
-| Other branches | `feat/assetflow-base` @ `5c831a5`, `feat/assetflow-booking` @ `55025a4` (second review, B8/B10 open) |
+| Other branches | `gate/booking-fix` @ `9054b46`, `feat/assetflow-maintenance` @ `2602828`, `feat/assetflow-audit` @ `d364dfe`, `feat/assetflow-reports` @ `2346d84` (six-addon candidate) |
 
 Commit history:
 
@@ -109,17 +109,15 @@ Murmur is joined and working in this clone. The remote carries `refs/murmur/*`; 
 
 ## 4. What is missing
 
-1. Addon code exists only on `feat/assetflow-base` and `feat/assetflow-booking`; both are **changes
-   requested** and not merged. Maintenance, audit, and reports are not started.
-2. No running database on Hemil's machine (Docker daemon stopped, no local PostgreSQL); flat-orchid
-   runs Odoo 19 on daksh's machine and reports install/tests there.
-3. The harness is merged (`docker-compose.yml`, `scripts/test.ps1`), but the real addon install/test
-   path has not run yet because the addons are on feature branches.
-4. The base security model still exposes HR data and lacks allocation/transfer record rules; see the
-   review findings B1-B10.
-5. Signup, department management, and role-promotion UI are missing (B4-B6).
-6. QR generation, forgot-password behavior, and report export need an explicit decision (see
+1. All six addons are integrated on `feat/assetflow-reports` @ `2346d84`; 62 tests pass in Docker. The
+   candidate is awaiting cruising-barbet's independent confirmation of `9054b46`/`2346d84`.
+2. No running database on Hemil's machine is needed for the shared harness, but Docker is running; the
+   six-addon test stack is validated.
+3. Demo data, a browser smoke tour of the OWL dashboard, and the booking heatmap are still missing.
+4. Signup is covered by a unit test, not yet an HTTP browser tour.
+5. QR generation and forgot-password behavior still need a decision (see
    `docs/spec/traceability.md`).
+6. No CI/deployment target yet.
 
 ## 5. Risks and open questions
 

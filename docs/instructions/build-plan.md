@@ -38,12 +38,12 @@ addons. Phase 6 starts only when the models it aggregates are stable.
 | Phase | Status | Branch / note |
 |-------|--------|---------------|
 | 0 | done (harness merged) | docs + `.gitignore` + compose/test runner on main (`2440d94`) |
-| 1 | second review, B8/B10 open | `feat/assetflow-base` @ `5c831a5` |
-| 2 | second review, B8/B10 open | same branch |
-| 3 | second review, B10 open | `feat/assetflow-booking` @ `55025a4` |
-| 4 | started | patient-wallaby, based on `5c831a5` |
-| 5 | contract ready | `docs/spec/audit-implementation.md` |
-| 6 | contract ready | `docs/spec/reports-implementation.md` |
+| 1 | gate candidate | `gate/booking-fix` @ `9054b46`; B8 fix pending independent confirmation |
+| 2 | gate candidate | same branch |
+| 3 | gate candidate | same branch; B10 closed |
+| 4 | integrated | `2602828`; 18 tests green |
+| 5 | integrated | `d364dfe`; 10 tests green |
+| 6 | integrated | `2346d84`; 7 tests green |
 | 7 | not started | needs a stable demo and the harness |
 
 The full finding list is in [`../reviews/2026-11-21-base-assets-booking.md`](../reviews/2026-11-21-base-assets-booking.md).
