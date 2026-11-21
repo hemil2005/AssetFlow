@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_assetflow_asset_form_maintenance" model="ir.ui.view">
+        <field name="name">assetflow.asset.form.maintenance</field>
+        <field name="model">assetflow.asset</field>
+        <field name="inherit_id" ref="assetflow_assets.view_assetflow_asset_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Maintenance History">
+                    <field name="maintenance_ids" readonly="1">
+                        <list>
+                            <field name="reference"/>
+                            <field name="name"/>
+                            <field name="priority"/>
+                            <field name="technician_id"/>
+                            <field name="state"/>
+                            <field name="create_date"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
