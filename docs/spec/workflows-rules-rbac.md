@@ -124,6 +124,10 @@ stateDiagram-v2
 Sequence gaps are acceptable after a rollback; uniqueness and monotonic tags matter, not gapless
 numbers.
 
+For the activity log, a Department Head reads the rows attributed to their department or written by
+their department's people. Rows logged before the log carried a department belong to no head;
+managers and administrators still see them.
+
 ## 3. Roles and access
 
 ### 3.1 Groups
