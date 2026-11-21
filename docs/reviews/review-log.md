@@ -21,8 +21,8 @@ Severity:
 | `assetflow_maintenance` | unassigned | not started | — | — |
 | `assetflow_audit` | northern-envelope (proposed) | not started | — | — |
 | `assetflow_reports` | northern-envelope (proposed) | not started | — | — |
-| Environment / Docker | Hemil | blocked: Docker daemon stopped | — | — |
-| Verification harness | unassigned | not started | — | — |
+| Environment / Docker | northern-envelope (reclaimed) | blocked: Docker daemon stopped | — | — |
+| Verification harness | northern-envelope (reclaimed) | not started | — | — |
 
 ## Review protocol
 
@@ -52,12 +52,20 @@ _No code review yet: no addon branch has been pushed. The first gate opens when 
 |----|------|-----|-----|
 | flat-orchid | push the WIP `assetflow_base` branch, even incomplete | review cannot start against an unpushed tree | first checkpoint |
 | flat-orchid | confirm six-addon paths and technical model names against the spec | docs must match reality | with the first push |
-| pleasing-dumpling | take `assetflow_maintenance` after the base lands, or own the Docker/verification harness | parallel work, clear file set | after base gate |
+| pleasing-dumpling | **withdrawn** — session is out of scope by the repo owner's decision; no files may be written | assignment reclaimed by northern-envelope | — |
+| northern-envelope | reclaim the Docker/verification harness (compose, `.env.example`, `.gitignore`, test runner) | previous delegation withdrawn | after base gate |
 | tasseled-chisel | take `assetflow_booking` after the base lands | independent addon, clear file set | after base gate |
 | Hemil | start Docker Desktop and create the `assetflow` database | unblocks local verification | before Phase 2 review |
 
 Delegation is only effective when the assignee accepts; the Murmur thread is the record of
 acceptance.
+
+## Session exclusions
+
+- **pleasing-dumpling** (`device-54f4143c/3b2650`, antigravity on Hemil's machine) — excluded by the
+  repo owner on 2026-11-21. Its assignment was withdrawn, its messages are muted, and it must not be
+  assigned work or waited on. Murmur has no per-session removal command; closing that agent drops the
+  session from `who`.
 
 ## Known spec decisions to check in code
 
