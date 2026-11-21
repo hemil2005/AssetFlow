@@ -2,13 +2,48 @@ from datetime import timedelta, timezone
 
 from babel import Locale
 from babel.dates import get_day_names
+from psycopg2 import errors as pg_errors
 
 from odoo import api, fields, models
+
+
+# PostgreSQL tzdata in the Odoo image does not always carry legacy aliases.
+LEGACY_TIMEZONES = {
+    'Asia/Calcutta': 'Asia/Kolkata',
+    'Asia/Katmandu': 'Asia/Kathmandu',
+    'Asia/Rangoon': 'Asia/Yangon',
+    'Asia/Saigon': 'Asia/Ho_Chi_Minh',
+    'Europe/Kiev': 'Europe/Kyiv',
+    'America/Godthab': 'America/Nuuk',
+    'Atlantic/Faeroe': 'Atlantic/Faroe',
+    'Pacific/Truk': 'Pacific/Chuuk',
+    'Pacific/Ponape': 'Pacific/Pohnpei',
+}
 
 
 class AssetflowDashboard(models.TransientModel):
     _name = 'assetflow.dashboard'
     _description = 'AssetFlow Dashboard'
+
+    @api.private
+    def _safe_timezone(self):
+        """Return a timezone name PostgreSQL accepts, or UTC.
+
+        Odoo passes the session timezone into ``_read_group`` SQL. Browsers and
+        old profiles still report legacy aliases (for example ``Asia/Calcutta``)
+        that some PostgreSQL tzdata builds reject, which used to break the whole
+        heatmap RPC. Map the common aliases and probe the result in a savepoint.
+        """
+        tz = self.env.context.get('tz') or self.env.user.tz
+        if not tz:
+            return None
+        tz = LEGACY_TIMEZONES.get(tz, tz)
+        try:
+            with self.env.cr.savepoint():
+                self.env.cr.execute('SELECT now() AT TIME ZONE %s', (tz,))
+        except pg_errors.InvalidParameterValue:
+            return 'UTC'
+        return tz
 
     @api.private
     def _day_bounds_utc(self, day):
@@ -163,7 +198,11 @@ class AssetflowDashboard(models.TransientModel):
 
         start, _ = self._day_bounds_utc(date_from)
         _, end = self._day_bounds_utc(date_to)
-        groups = self.env['assetflow.booking']._read_group(
+        booking_model = self.env['assetflow.booking']
+        safe_tz = self._safe_timezone()
+        if safe_tz:
+            booking_model = booking_model.with_context(tz=safe_tz)
+        groups = booking_model._read_group(
             [
                 ('state', '!=', 'cancelled'),
                 ('start_datetime', '>=', start),

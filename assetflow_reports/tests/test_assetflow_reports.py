@@ -166,6 +166,13 @@ class TestAssetflowReports(TransactionCase):
         self.assertIn('Department Allocation Summary', html)
         self.assertIn('AF-REP-1', html)
 
+    def test_booking_heatmap_handles_legacy_timezone(self):
+        dashboard = self.env['assetflow.dashboard'].with_context(tz='Asia/Calcutta')
+        data = dashboard.get_booking_heatmap()
+        self.assertEqual(len(data['rows']), 7)
+        self.assertGreaterEqual(data['total'], 1)
+        self.assertTrue(dashboard.get_kpi_data())
+
     def test_booking_heatmap_buckets(self):
         now = fields.Datetime.now()
         tomorrow = now + timedelta(days=1)
