@@ -8,10 +8,25 @@
                 <field name="timestamp"/>
                 <field name="user_id"/>
                 <field name="action"/>
+                <field name="department_id"/>
                 <field name="model_name"/>
                 <field name="res_id"/>
                 <field name="description"/>
             </list>
+        </field>
+    </record>
+
+    <record id="view_assetflow_activity_log_search" model="ir.ui.view">
+        <field name="name">assetflow.activity.log.search</field>
+        <field name="model">assetflow.activity.log</field>
+        <field name="arch" type="xml">
+            <search string="Activity Logs">
+                <field name="user_id"/>
+                <field name="department_id"/>
+                <field name="description"/>
+                <filter name="group_department" string="Department" context="{'group_by': 'department_id'}"/>
+                <filter name="group_action" string="Action" context="{'group_by': 'action'}"/>
+            </search>
         </field>
     </record>
 
