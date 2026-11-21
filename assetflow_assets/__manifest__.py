@@ -21,6 +21,7 @@
         'views/assetflow_allocation_views.xml',
         'views/assetflow_transfer_views.xml',
         'views/assetflow_assets_menus.xml',
+        'report/assetflow_asset_qr_report.xml',
     ],
     'installable': True,
     'application': False,

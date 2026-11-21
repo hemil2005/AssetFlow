@@ -1,3 +1,8 @@
+import base64
+import io
+
+import qrcode
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
@@ -51,6 +56,7 @@ class AssetflowAsset(models.Model):
     state = fields.Selection(ASSET_STATES, string='Lifecycle Status', default='available', required=True, tracking=True)
     is_bookable = fields.Boolean(string='Shared / Bookable', default=False)
     holder_employee_id = fields.Many2one('assetflow.employee', string='Current Holder', ondelete='set null')
+    qr_code = fields.Binary(string='QR Label', compute='_compute_qr_code', store=False)
     expected_return_date = fields.Date(string='Expected Return Date')
     image_1920 = fields.Image(string='Photo', max_width=1024, max_height=1024)
     active = fields.Boolean(string='Active', default=True)
@@ -65,6 +71,28 @@ class AssetflowAsset(models.Model):
     allocate_employee_id = fields.Many2one('assetflow.employee', string='Allocate To Employee', store=False)
     allocate_department_id = fields.Many2one('assetflow.department', string='Allocate To Department', store=False)
     allocate_expected_return_date = fields.Date(string='New Expected Return Date', store=False)
+
+    @api.depends('asset_tag')
+    def _compute_qr_code(self):
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '').rstrip('/')
+        for asset in self:
+            # With no configured base URL the tag itself is the payload, so the
+            # label still carries a meaningful identifier.
+            payload = (
+                f'{base_url}/web#model=assetflow.asset&id={asset.id}&view_type=form'
+                if base_url else asset.asset_tag
+            )
+            qr = qrcode.QRCode(
+                error_correction=qrcode.constants.ERROR_CORRECT_M,
+                box_size=6,
+                border=2,
+            )
+            qr.add_data(payload)
+            qr.make(fit=True)
+            image = qr.make_image(fill_color='black', back_color='white')
+            buffer = io.BytesIO()
+            image.save(buffer, format='PNG')
+            asset.qr_code = base64.b64encode(buffer.getvalue())
 
     @api.depends('holder_employee_id', 'expected_return_date', 'state')
     def _compute_is_overdue(self):
