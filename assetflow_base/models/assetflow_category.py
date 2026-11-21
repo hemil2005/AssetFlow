@@ -23,9 +23,11 @@ class AssetflowCategory(models.Model):
 
     @api.depends('name')
     def _compute_asset_count(self):
-        asset_model = self.env['ir.model'].sudo().search_count([('model', '=', 'assetflow.asset')])
+        if 'assetflow.asset' not in self.env.registry.models:
+            for category in self:
+                category.asset_count = 0
+            return
         for category in self:
-            category.asset_count = (
-                self.env['assetflow.asset'].search_count([('category_id', '=', category.id)])
-                if asset_model else 0
-            )
+            category.asset_count = self.env['assetflow.asset'].search_count([
+                ('category_id', '=', category.id),
+            ])
