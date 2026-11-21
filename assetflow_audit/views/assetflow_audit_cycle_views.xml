@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_assetflow_audit_cycle_list" model="ir.ui.view">
+        <field name="name">assetflow.audit.cycle.list</field>
+        <field name="model">assetflow.audit.cycle</field>
+        <field name="arch" type="xml">
+            <list string="Audit Cycles">
+                <field name="reference"/>
+                <field name="name"/>
+                <field name="scope_department_id"/>
+                <field name="scope_location"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="auditor_ids" widget="many2many_tags"/>
+                <field name="discrepancy_count"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_assetflow_audit_cycle_form" model="ir.ui.view">
+        <field name="name">assetflow.audit.cycle.form</field>
+        <field name="model">assetflow.audit.cycle</field>
+        <field name="arch" type="xml">
+            <form string="Audit Cycle">
+                <header>
+                    <button name="action_start" type="object" string="Start Audit"
+                            class="btn-primary" invisible="state != 'draft'"
+                            groups="assetflow_base.group_assetflow_asset_manager"/>
+                    <button name="action_close" type="object" string="Close Audit"
+                            class="btn-primary" invisible="state != 'in_progress'"
+                            groups="assetflow_base.group_assetflow_asset_manager"
+                            confirm="Closing locks the audit and applies missing/damaged statuses. Continue?"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,in_progress,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Q4 2026 IT audit"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="reference"/>
+                            <field name="scope_department_id"/>
+                            <field name="scope_location"/>
+                        </group>
+                        <group>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="auditor_ids" widget="many2many_tags"/>
+                            <field name="discrepancy_count"/>
+                            <field name="closed_by" invisible="state != 'closed'"/>
+                            <field name="closed_at" invisible="state != 'closed'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Assets">
+                            <field name="line_ids" readonly="state == 'closed'">
+                                <list editable="bottom" create="false" delete="false">
+                                    <field name="asset_id"/>
+                                    <field name="expected_location"/>
+                                    <field name="result"/>
+                                    <field name="notes"/>
+                                    <field name="verified_by_id"/>
+                                    <field name="verified_at"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_assetflow_audit_cycle_search" model="ir.ui.view">
+        <field name="name">assetflow.audit.cycle.search</field>
+        <field name="model">assetflow.audit.cycle</field>
+        <field name="arch" type="xml">
+            <search string="Search Audit Cycles">
+                <field name="name"/>
+                <field name="reference"/>
+                <field name="scope_department_id"/>
+                <field name="auditor_ids"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="In Progress" name="in_progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter string="Closed" name="closed" domain="[('state', '=', 'closed')]"/>
+                <group>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Department" name="group_department"
+                            context="{'group_by': 'scope_department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_assetflow_audit_cycle" model="ir.actions.act_window">
+        <field name="name">Audit Cycles</field>
+        <field name="res_model">assetflow.audit.cycle</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_assetflow_audit_cycle_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create an audit cycle to verify assets.</p>
+        </field>
+    </record>
+</odoo>

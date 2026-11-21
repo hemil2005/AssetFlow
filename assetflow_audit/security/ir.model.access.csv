@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_assetflow_audit_cycle_admin,assetflow.audit.cycle administrator,model_assetflow_audit_cycle,assetflow_base.group_assetflow_admin,1,1,1,1
+access_assetflow_audit_cycle_manager,assetflow.audit.cycle manager,model_assetflow_audit_cycle,assetflow_base.group_assetflow_asset_manager,1,1,1,0
+access_assetflow_audit_cycle_head,assetflow.audit.cycle head,model_assetflow_audit_cycle,assetflow_base.group_assetflow_department_head,1,0,0,0
+access_assetflow_audit_cycle_employee,assetflow.audit.cycle employee,model_assetflow_audit_cycle,assetflow_base.group_assetflow_employee,1,0,0,0
+access_assetflow_audit_line_admin,assetflow.audit.line administrator,model_assetflow_audit_line,assetflow_base.group_assetflow_admin,1,1,1,1
+access_assetflow_audit_line_manager,assetflow.audit.line manager,model_assetflow_audit_line,assetflow_base.group_assetflow_asset_manager,1,1,1,0
+access_assetflow_audit_line_head,assetflow.audit.line head,model_assetflow_audit_line,assetflow_base.group_assetflow_department_head,1,0,0,0
+access_assetflow_audit_line_employee,assetflow.audit.line employee,model_assetflow_audit_line,assetflow_base.group_assetflow_employee,1,1,0,0
