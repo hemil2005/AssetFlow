@@ -20,10 +20,14 @@ purchasing, invoicing, and accounting.
 | 3 | [research/environment-setup.md](research/environment-setup.md) | How to get a running Odoo 19 + PostgreSQL environment (Docker and source routes) |
 | 4 | [spec/domain-model.md](spec/domain-model.md) | Every model, field, relationship, constraint, and index, split across the six addons |
 | 5 | [spec/workflows-rules-rbac.md](spec/workflows-rules-rbac.md) | State machines, business rules, roles, record rules, screen mapping, KPIs, notifications |
-| 6 | [instructions/build-plan.md](instructions/build-plan.md) | Phased build order with acceptance criteria and a suggested parallel split |
-| 7 | [instructions/coding-instructions.md](instructions/coding-instructions.md) | The rules an agent or developer must follow when writing the addons |
-| 8 | [instructions/verification.md](instructions/verification.md) | Test matrix, commands, and the demo checklist |
-| 9 | [instructions/murmur-protocol.md](instructions/murmur-protocol.md) | The team rule for reading and answering Murmur messages |
+| 6 | [spec/audit-implementation.md](spec/audit-implementation.md) | Implementation contract for the audit addon |
+| 7 | [spec/reports-implementation.md](spec/reports-implementation.md) | Implementation contract for the dashboard, pivots, heatmap, and PDFs |
+| 8 | [spec/demo-data.md](spec/demo-data.md) | Deterministic demo dataset, expected KPIs, reset routine |
+| 9 | [spec/traceability.md](spec/traceability.md) | Every brief requirement mapped to code and proof |
+| 10 | [instructions/build-plan.md](instructions/build-plan.md) | Phased build order with acceptance criteria and a suggested parallel split |
+| 11 | [instructions/coding-instructions.md](instructions/coding-instructions.md) | The rules an agent or developer must follow when writing the addons |
+| 12 | [instructions/verification.md](instructions/verification.md) | Test matrix, commands, and the demo checklist |
+| 13 | [instructions/murmur-protocol.md](instructions/murmur-protocol.md) | The team rule for reading and answering Murmur messages |
 
 Decisions are recorded in [`adr/`](adr/): six addons, the employee/auth model, and the concurrency
 strategy.
