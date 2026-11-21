@@ -1,0 +1,81 @@
+name: Odoo 19 addon tests
+
+# Exact commands reproduced by this job, from a clean clone with Docker running:
+#   docker pull odoo:19.0
+#   docker run -d --name af-pg -p 5432:5432 \
+#     -e POSTGRES_USER=odoo -e POSTGRES_PASSWORD=odoo -e POSTGRES_DB=postgres postgres:16
+#   docker run --rm --name odoo-ci --network host \
+#     -v "$PWD:/mnt/extra-addons:ro" -v odoo-ci-data:/var/lib/odoo \
+#     -e HOST=127.0.0.1 -e PORT=5432 -e USER=odoo -e PASSWORD=odoo \
+#     odoo:19.0 odoo -d assetflow_ci \
+#       -i assetflow_base,assetflow_assets,assetflow_booking,assetflow_maintenance,assetflow_audit,assetflow_reports \
+#       --test-enable \
+#       --test-tags /assetflow_base,/assetflow_assets,/assetflow_booking,/assetflow_maintenance,/assetflow_audit,/assetflow_reports \
+#       --without-demo --no-http --stop-after-init --log-level=test
+# The odoo:19.0 image entrypoint adds /mnt/extra-addons to addons_path, so no
+# --addons-path argument is needed. The postgres service below is the same as
+# the af-pg container above, with a health check instead of a sleep.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: Install and test all six addons
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U odoo -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Pull explicitly so a stale runner cache cannot silently change the
+      # Odoo minor version; the pulled layer is then reused by docker run.
+      - name: Pull Odoo 19 image
+        run: docker pull odoo:19.0
+
+      - name: Install and test all six AssetFlow addons
+        shell: bash
+        run: |
+          set -o pipefail
+          ADDONS=assetflow_base,assetflow_assets,assetflow_booking,assetflow_maintenance,assetflow_audit,assetflow_reports
+          TAGS=/assetflow_base,/assetflow_assets,/assetflow_booking,/assetflow_maintenance,/assetflow_audit,/assetflow_reports
+          for addon in ${ADDONS//,/ }; do
+            test -f "$addon/__manifest__.py" || { echo "Missing $addon/__manifest__.py"; exit 1; }
+          done
+          docker run --rm --name odoo-ci --network host \
+            -v "$PWD:/mnt/extra-addons:ro" \
+            -v odoo-ci-data:/var/lib/odoo \
+            -e HOST=127.0.0.1 -e PORT=5432 -e USER=odoo -e PASSWORD=odoo \
+            odoo:19.0 odoo -d assetflow_ci \
+              -i "$ADDONS" --test-enable --test-tags "$TAGS" \
+              --without-demo --no-http --stop-after-init --log-level=test 2>&1 | tee odoo.log
+          if grep -Eq "odoo.tests.result: [1-9][0-9]* failed|[1-9][0-9]* error\(s\)" odoo.log; then
+            echo "Odoo reported test failures"
+            exit 1
+          fi
+          grep "odoo.tests.result:" odoo.log
+
+      - name: Upload Odoo log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: odoo-log
+          path: odoo.log
+          if-no-files-found: ignore
