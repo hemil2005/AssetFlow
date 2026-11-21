@@ -15,17 +15,16 @@ Severity:
 | Workstream | Owner | State | Branch | Review |
 |------------|-------|-------|--------|--------|
 | Docs: research, spec, plan, instructions, ADRs | northern-envelope | complete, in review by team | local `docs/` | self-checked |
-| `assetflow_base` scaffold | flat-orchid | gate candidate `9054b46` | `gate/booking-fix` | B8 fixed, awaiting independent confirmation |
-| `assetflow_assets` | flat-orchid | gate candidate `9054b46` | `gate/booking-fix` | B8 fixed, awaiting independent confirmation |
-| `assetflow_booking` | flat-orchid | gate candidate `9054b46` | `gate/booking-fix` | B10 fixed; B8 fixed |
+| `assetflow_base` scaffold | flat-orchid | **gate green** `9d5618c` (33/33, probe 11/11) | `feat/assetflow-base` @ `0ed9434` | B8 closed |
+| `assetflow_assets` | flat-orchid | **gate green** `9d5618c` | `feat/assetflow-booking` @ `9d5618c` | B8 closed |
+| `assetflow_booking` | flat-orchid | **gate green** `9d5618c` | `feat/assetflow-booking` @ `9d5618c` | B10/B8 closed |
 | `assetflow_maintenance` | patient-wallaby | integrated, 18 tests green | `2602828` | reviewed |
-| `assetflow_audit` | northern-envelope | integrated, 10 tests green | `d364dfe` | pending independent review |
-| `assetflow_reports` | northern-envelope | integrated, 7 tests green | `2346d84` | pending independent review |
-| `assetflow_audit` | northern-envelope (proposed) | not started | — | — |
-| `assetflow_reports` | northern-envelope (proposed) | not started | — | — |
+| `assetflow_audit` | northern-envelope | integrated, 16 tests; review fixes in `dd32a1d` | `feat/assetflow-reports` @ `8824520` | A1-A11 fixed and re-checked |
+| `assetflow_reports` | northern-envelope | integrated, 12 tests; heatmap + retirement report | `feat/assetflow-reports` @ `8824520` | R1-R8 fixed and re-checked; browser re-click pending |
+| Demo seed | flat-orchid | `3cb0933`; KPI block green | `feat/assetflow-demo` | password fix (`new_password`) pending |
 | Environment / Docker | patient-wallaby | merged `2440d94` | main | approved |
 | Verification harness | patient-wallaby | merged `2440d94` | main | approved |
-| Gate verification (independent) | cruising-barbet | evidence on `0f4446d` (9 PASS / 1 FAIL B8); verifying `9054b46`/`2346d84` | temp worktree per SHA | evidence only |
+| Gate verification (independent) | cruising-barbet | `9d5618c` 11/11 PASS; `8d9d108` 10/10 PASS; re-checking `8824520` | temp worktree per SHA | evidence only |
 
 ## Review protocol
 
@@ -55,7 +54,7 @@ Integration: [`2026-11-21-integration.md`](2026-11-21-integration.md) — six ad
 | B5 | H | spec | department model/screen missing | flat-orchid | **closed structurally** |
 | B6 | H | spec | role promotion UI missing | flat-orchid | **closed structurally** |
 | B7 | H | lifecycle | unguarded transitions/destructive actions | flat-orchid | **closed**: write guard; residual client-spoofable `allow_state_write` context |
-| B8 | H | integrity | allocation edit/department sync; unallocated transfer; employee transfer target | flat-orchid | **fixed** in `376d90f`; independent confirmation pending |
+| B8 | H | integrity | allocation edit/department sync; unallocated transfer; employee transfer target | flat-orchid | **closed** in `9d5618c`; independent probe 11/11 |
 | B9 | H | spec | return condition/notes | flat-orchid | **closed** |
 | B10 | H | booking | immediate reserve; reminder crash without login | flat-orchid | **closed** in `0f4446d` |
 | M7 | M | security | booking rules `noupdate="1"` | flat-orchid | **closed** |
@@ -66,11 +65,13 @@ Integration: [`2026-11-21-integration.md`](2026-11-21-integration.md) — six ad
 
 | To | Task | Why | Due |
 |----|------|-----|-----|
-| flat-orchid | fix the remaining B8/B10 items and M7 on the current branches, then push | gate is blocked on booking timing and allocation/transfer integrity | next push |
-| flat-orchid | reply with any blocker you dispute, with the reason and the spec/ADR you want changed | disagreements are resolved before code, not after | next push |
-| patient-wallaby | `assetflow_maintenance` is started on `feat/assetflow-maintenance`, based on `5c831a5` | maintenance is unblocked while the base gate closes | next push |
-| cruising-barbet | re-run combined evidence on `55025a4` including the targeted employee/booking/allocation/reminder cases | closes the behavioral evidence gap | this push |
-| northern-envelope | re-review both branches within one turn of the next push and update this log | keep the loop short | next push |
+| flat-orchid | Fix the demo seed password (`new_password`) and prove a real login; push `feat/assetflow-demo` | demo readiness; the KPI block alone does not prove logins | next push |
+| patient-wallaby | Browser re-click `8824520`: cards + heatmap + admin/employee + console | verifies the OWL fix that server tests cannot see | this push |
+| cruising-barbet | Verify `8824520` (73-test suite + JS/menu/KPI deltas) | final independent gate | this push |
+| northern-envelope | Merge to `main` after both verifications, tag `v0.1.0`, merge demo, run the narrative | release | after gate |
+| flat-orchid | Old: fix B8/B10/M7 — done (`9d5618c`) | superseded | done |
+| patient-wallaby | Maintenance `2602828` integrated and reviewed | superseded | done |
+| northern-envelope | Audit/reports review fixes A1-A11/R1-R8, dashboard crash, menu leak | superseded | done |
 | pleasing-dumpling | **withdrawn** — session is out of scope by the repo owner's decision; no files may be written | assignment reclaimed by northern-envelope | — |
 | northern-envelope | harness reclaimed from pleasing-dumpling, then handed to patient-wallaby | keep ownership explicit | done |
 | patient-wallaby | harness approved and merged (`2440d94`); next take `assetflow_maintenance` after the base/assets/booking gate | the harness is done; maintenance is the next unassigned addon | maintenance after gate |
