@@ -52,4 +52,4 @@ class TestAssetflowBase(TransactionCase):
         self.assertTrue(created.employee_id)
         self.assertFalse(created.has_group('base.group_portal'))
         self.assertFalse(created.has_group('assetflow_base.group_assetflow_asset_manager'))
-        self.assertEqual(created.employee_id.role, 'employee')
+        self.assertEqual(created.employee_id.role, 'none')
