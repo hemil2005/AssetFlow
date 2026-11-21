@@ -1,33 +1,36 @@
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 
 class AssetflowAllocation(models.Model):
     _name = 'assetflow.allocation'
     _description = 'Asset Allocation'
-    _order = 'allocated_on desc'
+    _order = 'start_datetime desc, id desc'
 
     _only_one_active = models.UniqueIndex(
-        "(asset_id) WHERE state = 'active'",
-        'This asset already has an active allocation.',
+        "(asset_id) WHERE state = 'active'", 'This asset already has an active allocation.',
     )
     _employee_state_idx = models.Index('(employee_id, state)')
-    _expected_return_idx = models.Index('(expected_return_date, state)')
+    _return_idx = models.Index('(expected_return_date, state)')
 
     asset_id = fields.Many2one('assetflow.asset', string='Asset', required=True, ondelete='restrict')
-    employee_id = fields.Many2one('hr.employee', string='Employee', ondelete='set null')
-    department_id = fields.Many2one('hr.department', string='Department', ondelete='set null')
-    allocated_on = fields.Datetime(string='Allocated On', default=fields.Datetime.now, required=True)
+    employee_id = fields.Many2one('assetflow.employee', string='Employee', ondelete='set null')
+    department_id = fields.Many2one('assetflow.department', string='Department', ondelete='set null')
+    allocated_by = fields.Many2one('res.users', string='Allocated By', default=lambda self: self.env.user, readonly=True)
+    start_datetime = fields.Datetime(string='Allocated At', default=fields.Datetime.now, required=True, readonly=True)
     expected_return_date = fields.Date(string='Expected Return Date')
-    returned_on = fields.Datetime(string='Returned On')
-    return_note = fields.Text(string='Condition Check-in Notes')
+    return_datetime = fields.Datetime(string='Returned At', readonly=True)
+    checkin_condition = fields.Selection(
+        [('new', 'New'), ('good', 'Good'), ('fair', 'Fair'), ('poor', 'Poor'), ('damaged', 'Damaged')],
+        string='Return Condition',
+    )
+    checkin_notes = fields.Text(string='Check-in Notes')
     state = fields.Selection(
-        [('active', 'Active'), ('returned', 'Returned'), ('transferred', 'Transferred')],
-        string='Status', default='active', required=True, index=True,
+        [('active', 'Active'), ('returned', 'Returned')],
+        string='Status', default='active', required=True, index=True, readonly=True,
     )
-    is_overdue = fields.Boolean(
-        string='Overdue', compute='_compute_is_overdue', search='_search_is_overdue',
-    )
+    note = fields.Text(string='Notes')
+    is_overdue = fields.Boolean(string='Overdue', compute='_compute_is_overdue', search='_search_is_overdue')
 
     @api.depends('state', 'expected_return_date')
     def _compute_is_overdue(self):
@@ -49,16 +52,49 @@ class AssetflowAllocation(models.Model):
         wants_overdue = (operator == '=' and value) or (operator == '!=' and not value)
         return overdue if wants_overdue else not_overdue
 
-    @api.constrains('state', 'asset_id')
-    def _check_single_active_allocation(self):
-        for allocation in self.filtered(lambda record: record.state == 'active'):
-            other = self.search([
-                ('asset_id', '=', allocation.asset_id.id),
-                ('state', '=', 'active'),
-                ('id', '!=', allocation.id),
-            ], limit=1)
-            if other:
-                raise ValidationError(_(
-                    'Asset %s is already allocated. Use a transfer request instead.',
-                    allocation.asset_id.tag,
-                ))
+    @api.constrains('employee_id', 'department_id')
+    def _check_holder(self):
+        for allocation in self:
+            if not allocation.employee_id and not allocation.department_id:
+                raise ValidationError(_('Choose an employee or a department.'))
+
+    @api.constrains('expected_return_date', 'start_datetime')
+    def _check_dates(self):
+        for allocation in self:
+            if (allocation.expected_return_date
+                    and allocation.expected_return_date < fields.Date.context_today(allocation)):
+                raise ValidationError(_('Expected return cannot be in the past.'))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        assets = self.env['assetflow.asset'].browse([
+            vals['asset_id'] for vals in vals_list if vals.get('asset_id')
+        ])
+        assets.lock_for_update()
+        for vals in vals_list:
+            asset = self.env['assetflow.asset'].browse(vals.get('asset_id'))
+            if not (vals.get('employee_id') or vals.get('department_id')):
+                raise ValidationError(_('Choose an employee or a department.'))
+            if asset.state != 'available':
+                raise ValidationError(_('Only an available asset can be allocated.'))
+            if asset._active_allocation():
+                raise ValidationError(_('Asset %s already has an active allocation.', asset.asset_tag))
+            if asset._has_current_booking():
+                raise ValidationError(_('Asset %s is booked right now.', asset.asset_tag))
+        allocations = super().create(vals_list)
+        for allocation in allocations:
+            allocation.asset_id.write({
+                'state': 'allocated',
+                'holder_employee_id': allocation.employee_id.id,
+                'expected_return_date': allocation.expected_return_date,
+            })
+        return allocations
+
+    def write(self, vals):
+        if not self.env.context.get('allow_state_write') and {'state', 'asset_id', 'start_datetime'} & set(vals):
+            raise UserError(_('Use asset allocation actions to change these fields.'))
+        return super().write(vals)
+
+    def action_return(self):
+        for allocation in self:
+            allocation.asset_id.action_return(allocation.checkin_condition, allocation.checkin_notes)

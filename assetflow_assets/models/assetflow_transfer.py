@@ -1,6 +1,13 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
+TRANSFER_STATES = [
+    ('requested', 'Requested'),
+    ('approved', 'Approved'),
+    ('rejected', 'Rejected'),
+    ('cancelled', 'Cancelled'),
+]
+
 
 class AssetflowTransfer(models.Model):
     _name = 'assetflow.transfer'
@@ -8,35 +15,21 @@ class AssetflowTransfer(models.Model):
     _order = 'create_date desc'
 
     _only_one_pending = models.UniqueIndex(
-        "(asset_id) WHERE state = 'requested'",
-        'This asset already has a pending transfer request.',
+        "(asset_id) WHERE state = 'requested'", 'This asset already has a pending transfer.',
     )
     _asset_state_idx = models.Index('(asset_id, state)')
 
     asset_id = fields.Many2one('assetflow.asset', string='Asset', required=True, ondelete='restrict')
-    from_allocation_id = fields.Many2one('assetflow.allocation', string='Current Allocation')
-    from_employee_id = fields.Many2one(
-        'hr.employee', string='Currently Held By',
-        related='from_allocation_id.employee_id', store=True, readonly=True,
-    )
-    to_employee_id = fields.Many2one('hr.employee', string='Transfer To Employee')
-    to_department_id = fields.Many2one('hr.department', string='Transfer To Department')
+    from_employee_id = fields.Many2one('assetflow.employee', string='Currently Held By', readonly=True)
+    to_employee_id = fields.Many2one('assetflow.employee', string='Transfer To Employee')
+    to_department_id = fields.Many2one('assetflow.department', string='Transfer To Department')
     expected_return_date = fields.Date(string='Expected Return Date')
     reason = fields.Text(string='Reason')
-    state = fields.Selection(
-        [
-            ('draft', 'Draft'),
-            ('requested', 'Requested'),
-            ('approved', 'Approved'),
-            ('rejected', 'Rejected'),
-            ('done', 'Completed'),
-        ],
-        string='Status', default='draft', required=True, index=True,
-    )
-    requested_by_id = fields.Many2one(
-        'res.users', string='Requested By', default=lambda self: self.env.user, readonly=True,
-    )
-    approved_by_id = fields.Many2one('res.users', string='Approved By', readonly=True)
+    requested_by = fields.Many2one('res.users', string='Requested By', default=lambda self: self.env.user, readonly=True)
+    state = fields.Selection(TRANSFER_STATES, string='Status', default='requested', required=True, index=True, readonly=True)
+    decided_by = fields.Many2one('res.users', string='Decided By', readonly=True)
+    decided_at = fields.Datetime(string='Decided At', readonly=True)
+    decision_note = fields.Text(string='Decision Note', readonly=True)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -44,44 +37,83 @@ class AssetflowTransfer(models.Model):
             asset = self.env['assetflow.asset'].browse(vals.get('asset_id'))
             if asset:
                 active = asset._active_allocation()
-                vals.setdefault('from_allocation_id', active.id if active else False)
+                vals.setdefault('from_employee_id', active.employee_id.id if active else False)
         return super().create(vals_list)
 
-    def action_request(self):
+    @api.constrains('to_employee_id', 'to_department_id')
+    def _check_target(self):
         for transfer in self:
-            if transfer.state != 'draft':
-                raise UserError(_('Only draft transfers can be requested.'))
             if not transfer.to_employee_id and not transfer.to_department_id:
                 raise ValidationError(_('Select a new holder for the transfer.'))
-            transfer.state = 'requested'
+
+    @api.private
+    def _require_decider(self):
+        for transfer in self:
+            user = self.env.user
+            if user.has_group('assetflow_base.group_assetflow_asset_manager'):
+                continue
+            department = user.employee_id.department_id
+            if not (user.has_group('assetflow_base.group_assetflow_department_head')
+                    and department and transfer.asset_id.department_id == department):
+                raise UserError(_('Only an Asset Manager or the head of this department can decide.'))
+
+    def write(self, vals):
+        if not self.env.context.get('allow_state_write') and 'state' in vals:
+            raise UserError(_('Use the transfer actions to change its status.'))
+        return super().write(vals)
 
     def action_approve(self):
         for transfer in self:
-            transfer._require_manager()
+            transfer._require_decider()
             if transfer.state != 'requested':
-                raise UserError(_('Only requested transfers can be approved.'))
-            active = transfer.asset_id._active_allocation()
-            if active:
-                active.write({'state': 'transferred', 'returned_on': fields.Datetime.now()})
-            transfer.asset_id._set_state('available')
-            transfer.asset_id.action_allocate(
+                raise UserError(_('Only a requested transfer can be approved.'))
+            asset = transfer.asset_id
+            asset.lock_for_update()
+            active = asset._active_allocation()
+            if not active:
+                raise UserError(_('Asset %s has no active allocation to transfer.', asset.asset_tag))
+            active.with_context(allow_state_write=True).write({
+                'state': 'returned', 'return_datetime': fields.Datetime.now(),
+            })
+            asset.write({
+                'state': 'available', 'holder_employee_id': False, 'expected_return_date': False,
+            })
+            asset.action_allocate(
                 employee=transfer.to_employee_id,
                 department=transfer.to_department_id,
                 expected_return_date=transfer.expected_return_date,
             )
-            transfer.write({
+            transfer.with_context(allow_state_write=True).write({
                 'state': 'approved',
-                'approved_by_id': self.env.user.id,
+                'decided_by': self.env.user.id,
+                'decided_at': fields.Datetime.now(),
+                'decision_note': transfer.decision_note,
+            })
+            self.env['assetflow.activity.log']._log_activity(
+                'transfer_approve', transfer, _('Transfer of %s approved', asset.asset_tag),
+            )
+
+    def action_reject(self, reason=None):
+        for transfer in self:
+            transfer._require_decider()
+            if transfer.state != 'requested':
+                raise UserError(_('Only a requested transfer can be rejected.'))
+            reason = reason or transfer.decision_note
+            if not reason:
+                raise UserError(_('A rejection reason is required.'))
+            transfer.with_context(allow_state_write=True).write({
+                'state': 'rejected',
+                'decided_by': self.env.user.id,
+                'decided_at': fields.Datetime.now(),
+                'decision_note': reason,
             })
 
-    def action_reject(self):
+    def action_cancel(self):
         for transfer in self:
-            transfer._require_manager()
             if transfer.state != 'requested':
-                raise UserError(_('Only requested transfers can be rejected.'))
-            transfer.state = 'rejected'
-
-    @api.private
-    def _require_manager(self):
-        if not self.env.user.has_group('assetflow_base.group_assetflow_asset_manager'):
-            raise UserError(_('Only an Asset Manager can approve or reject transfers.'))
+                raise UserError(_('Only a requested transfer can be cancelled.'))
+            if transfer.requested_by != self.env.user and not self.env.user.has_group(
+                'assetflow_base.group_assetflow_asset_manager'
+            ):
+                raise UserError(_('Only the requester or an Asset Manager can cancel this transfer.'))
+            transfer.with_context(allow_state_write=True).write({'state': 'cancelled'})

@@ -1,6 +1,6 @@
 {
     'name': 'AssetFlow Assets',
-    'version': '19.0.1.0.0',
+    'version': '19.0.2.0.0',
     'category': 'AssetFlow',
     'summary': 'Asset registry, lifecycle states, allocation, transfer and return.',
     'description': """
