@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase
 from odoo.tools import mute_logger
@@ -114,6 +117,18 @@ class TestAssetflowAssets(TransactionCase):
         self.asset.with_user(self.manager).action_allocate(employee=self.employee)
         allocation = self.asset.allocation_ids
         self.assertEqual(allocation.department_id, self.department)
+
+    def test_active_allocation_edit_syncs_asset(self):
+        asset = self.asset.with_user(self.manager)
+        asset.action_allocate(employee=self.employee)
+        allocation = asset.allocation_ids
+        new_date = fields.Date.today() + timedelta(days=3)
+        allocation.write({
+            'employee_id': self.other_employee.id,
+            'expected_return_date': new_date,
+        })
+        self.assertEqual(asset.holder_employee_id, self.other_employee)
+        self.assertEqual(asset.expected_return_date, new_date)
 
     def test_employee_cannot_transfer_an_asset_they_do_not_hold(self):
         bookable = self.env['assetflow.asset'].with_user(self.manager).create({

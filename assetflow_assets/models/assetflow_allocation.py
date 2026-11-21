@@ -97,9 +97,7 @@ class AssetflowAllocation(models.Model):
         if not self.env.context.get('allow_state_write') and {'state', 'asset_id', 'start_datetime'} & set(vals):
             raise UserError(_('Use asset allocation actions to change these fields.'))
         result = super().write(vals)
-        if self.env.context.get('allow_state_write') and {
-            'employee_id', 'department_id', 'expected_return_date', 'state',
-        } & set(vals):
+        if {'employee_id', 'department_id', 'expected_return_date', 'state'} & set(vals):
             for allocation in self.filtered(lambda record: record.state == 'active'):
                 allocation.asset_id.with_context(allow_state_write=True).write({
                     'holder_employee_id': allocation.employee_id.id,
