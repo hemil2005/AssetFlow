@@ -84,13 +84,16 @@ class AssetflowAsset(models.Model):
         wants_overdue = (operator == '=' and value) or (operator == '!=' and not value)
         return overdue if wants_overdue else not_overdue
 
+    @api.depends('allocation_ids')
     def _compute_history_count(self):
         maintenance_installed = 'assetflow.maintenance.request' in self.env.registry.models
+        maintenance_counts = {}
+        if maintenance_installed and self.ids:
+            maintenance_counts = dict(self.env['assetflow.maintenance.request']._read_group(
+                [('asset_id', 'in', self.ids)], ['asset_id'], ['__count'],
+            ))
         for asset in self:
-            extra = (
-                self.env['assetflow.maintenance.request'].search_count([('asset_id', '=', asset.id)])
-                if maintenance_installed else 0
-            )
+            extra = maintenance_counts.get(asset, 0) if maintenance_installed else 0
             asset.history_count = len(asset.allocation_ids) + extra
 
     @api.model_create_multi
@@ -125,6 +128,19 @@ class AssetflowAsset(models.Model):
         if not (self.env.user.has_group('assetflow_base.group_assetflow_department_head')
                 and department and self.department_id == department):
             raise UserError(_('Only an Asset Manager or the head of this department can do that.'))
+
+    @api.private
+    def _require_returner(self, allocation):
+        if self.env.user.has_group('assetflow_base.group_assetflow_asset_manager'):
+            return
+        employee = self.env.user.employee_id
+        if employee and allocation.employee_id == employee:
+            return
+        department = employee.department_id if employee else False
+        if (self.env.user.has_group('assetflow_base.group_assetflow_department_head')
+                and department and self.department_id == department):
+            return
+        raise UserError(_('Only the holder, the department head or an Asset Manager can return this asset.'))
 
     @api.private
     def _require_admin(self):
@@ -184,14 +200,10 @@ class AssetflowAsset(models.Model):
 
     def action_return(self, condition=None, notes=None):
         self.ensure_one()
-        self._require_assigner()
         condition = condition or self.return_condition
         notes = notes or self.return_notes
         if not condition or not notes:
             raise UserError(_('A return condition and check-in notes are required.'))
-        allocation = self._active_allocation()
-        if not allocation:
-            raise UserError(_('Asset %s is not currently allocated.', self.asset_tag))
         self.lock_for_update()
         self.invalidate_recordset(['state'])
         if self.state != 'allocated':
@@ -199,13 +211,14 @@ class AssetflowAsset(models.Model):
         allocation = self._active_allocation()
         if not allocation:
             raise UserError(_('Asset %s has no active allocation to return.', self.asset_tag))
-        allocation.with_context(allow_state_write=True).write({
+        self._require_returner(allocation)
+        allocation.sudo().with_context(allow_state_write=True).write({
             'state': 'returned',
             'return_datetime': fields.Datetime.now(),
             'checkin_condition': condition,
             'checkin_notes': notes,
         })
-        self.with_context(allow_state_write=True).write({
+        self.sudo().with_context(allow_state_write=True).write({
             'state': 'available', 'holder_employee_id': False, 'expected_return_date': False,
         })
         self.env['assetflow.activity.log']._log_activity(
@@ -257,6 +270,11 @@ class AssetflowAsset(models.Model):
     def action_mark_lost(self, reason=None):
         self._transition('lost', ['available', 'allocated', 'reserved', 'maintenance'],
                          note=reason or self.transition_reason, admin_only=True, require_note=True)
+
+    def action_found(self, reason=None):
+        self._transition('available', ['lost'],
+                         note=reason or self.transition_reason, admin_only=True, require_note=True)
+        self.message_post(body=reason or _('Marked found.'))
 
     def action_retire(self, reason=None):
         self._transition('retired', ['available', 'reserved', 'maintenance', 'lost'],

@@ -41,6 +41,8 @@ class AssetflowAuditLine(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
+        if {'verified_by_id', 'verified_at'} & set(vals):
+            raise UserError(_('Verification identity and time are set by the audit action.'))
         if 'expected_location' in vals:
             raise UserError(_('The expected location snapshot cannot be changed.'))
         if {'cycle_id', 'asset_id'} & set(vals):

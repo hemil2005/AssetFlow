@@ -4,7 +4,7 @@ import { useService } from "@web/core/utils/hooks";
 
 export class AssetflowDashboard extends Component {
     static template = "assetflow_reports.Dashboard";
-    static props = {};
+    static props = ["*"];
 
     setup() {
         this.orm = useService("orm");
