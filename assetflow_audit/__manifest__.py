@@ -1,6 +1,6 @@
 {
     'name': 'AssetFlow Audit',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'AssetFlow',
     'summary': 'Audit cycles, discrepancy tracking and audit close.',
     'description': """
