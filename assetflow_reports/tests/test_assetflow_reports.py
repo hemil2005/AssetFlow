@@ -183,6 +183,35 @@ class TestAssetflowReports(TransactionCase):
             day = start.isoweekday() % 7
             self.assertGreaterEqual(heatmap['rows'][day]['hours'][start.hour], 1)
 
+    def test_booking_heatmap_accepts_legacy_timezone_alias(self):
+        # PostgreSQL 16 rejects "Asia/Calcutta" in AT TIME ZONE, but browsers
+        # still send it as a legacy alias for Asia/Kolkata.
+        now = fields.Datetime.now()
+        start = (now + timedelta(days=1)).replace(
+            hour=10, minute=0, second=0, microsecond=0,
+        )
+        room = self.env['assetflow.asset'].create({
+            'name': 'Room Heat Legacy TZ', 'asset_tag': 'AF-REP-9',
+            'category_id': self.category.id, 'department_id': self.department.id,
+            'is_bookable': True,
+        })
+        self.env['assetflow.booking'].with_user(self.manager_user).create({
+            'asset_id': room.id,
+            'employee_id': self.employee.id,
+            'start_datetime': start,
+            'end_datetime': start + timedelta(hours=1),
+        })
+
+        dashboard = self.env['assetflow.dashboard'].with_user(
+            self.manager_user
+        ).with_context(tz='Asia/Calcutta')
+        heatmap = dashboard.get_booking_heatmap()
+        self.assertEqual(len(heatmap['rows']), 7)
+        local = fields.Datetime.context_timestamp(dashboard, start)
+        self.assertGreaterEqual(
+            heatmap['rows'][local.isoweekday() % 7]['hours'][local.hour], 1,
+        )
+
     def test_booking_heatmap_respects_record_rules(self):
         now = fields.Datetime.now()
         tomorrow = now + timedelta(days=1)

@@ -145,9 +145,11 @@ class AssetflowDashboard(models.TransientModel):
     def get_booking_heatmap(self, date_from=None, date_to=None):
         """Bookings grouped by weekday and hour of day.
 
-        One ``_read_group`` query, rule-filtered: an employee sees their own
-        bookings, a manager sees every booking. Day index 0 is the first day
-        of the week in the current user's locale.
+        Rule-filtered: an employee sees their own bookings, a manager sees
+        every booking. Day index 0 is the first day of the week in the
+        current user's locale. Bucketing happens in Python with pytz so a
+        legacy timezone alias (e.g. ``Asia/Calcutta``) never reaches SQL --
+        PostgreSQL rejects those in ``AT TIME ZONE``.
         """
         today = fields.Date.context_today(self)
         if date_from:
@@ -160,19 +162,18 @@ class AssetflowDashboard(models.TransientModel):
 
         start, _ = self._day_bounds_utc(date_from)
         _, end = self._day_bounds_utc(date_to)
-        groups = self.env['assetflow.booking']._read_group(
-            [
-                ('state', '!=', 'cancelled'),
-                ('start_datetime', '>=', start),
-                ('start_datetime', '<', end),
-            ],
-            ['start_datetime:day_of_week', 'start_datetime:hour_number'],
-            ['id:count'],
-        )
+        bookings = self.env['assetflow.booking'].search([
+            ('state', '!=', 'cancelled'),
+            ('start_datetime', '>=', start),
+            ('start_datetime', '<', end),
+        ])
 
         grid = [[0] * 24 for _ in range(7)]
-        for day, hour, count in groups:
-            grid[int(day) % 7][int(hour) % 24] += count
+        for booking in bookings:
+            local = fields.Datetime.context_timestamp(
+                booking, fields.Datetime.to_datetime(booking.start_datetime),
+            )
+            grid[local.isoweekday() % 7][local.hour] += 1
 
         lang = self.env.lang or 'en_US'
         try:
