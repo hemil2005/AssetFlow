@@ -2,7 +2,7 @@
 <odoo>
     <menuitem id="menu_assetflow_audit" name="Audits"
               parent="assetflow_base.menu_assetflow_root" sequence="45"
-              groups="assetflow_base.group_assetflow_asset_manager,assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_department_head"/>
+              groups="assetflow_base.group_assetflow_employee"/>
 
     <menuitem id="menu_assetflow_audit_cycle" name="Audit Cycles"
               parent="menu_assetflow_audit" action="action_assetflow_audit_cycle" sequence="10"/>

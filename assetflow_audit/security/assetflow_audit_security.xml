@@ -57,4 +57,11 @@
         <field name="domain_force">[('cycle_id.auditor_ids.user_id', '=', user.id)]</field>
         <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
     </record>
+
+    <record id="assetflow_asset_auditor_rule" model="ir.rule">
+        <field name="name">AssetFlow: auditors read assets in their audits</field>
+        <field name="model_id" ref="model_assetflow_asset"/>
+        <field name="domain_force">[('audit_line_ids.cycle_id.auditor_ids.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
 </odoo>

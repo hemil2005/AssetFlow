@@ -106,6 +106,10 @@ class TestAssetflowAudit(TransactionCase):
         cycle = self._started_cycle()
         visible = self.env['assetflow.audit.cycle'].with_user(self.auditor_user).search([])
         self.assertIn(cycle, visible)
+        visible_assets = self.env['assetflow.asset'].with_user(self.auditor_user).search([
+            ('id', 'in', [self.asset.id, self.other_asset.id]),
+        ])
+        self.assertEqual(set(visible_assets.ids), {self.asset.id, self.other_asset.id})
         line = cycle.line_ids[0]
         line.with_user(self.auditor_user).write({'result': 'verified'})
         self.assertEqual(line.result, 'verified')
