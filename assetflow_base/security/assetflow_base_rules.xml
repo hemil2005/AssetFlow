@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="assetflow_employee_own_rule" model="ir.rule">
+        <field name="name">AssetFlow: employees see their own directory record</field>
+        <field name="model_id" ref="model_assetflow_employee"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <record id="assetflow_employee_head_rule" model="ir.rule">
+        <field name="name">AssetFlow: heads see their department employees</field>
+        <field name="model_id" ref="model_assetflow_employee"/>
+        <field name="domain_force">[('department_id', '=', user.employee_id.department_id.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_department_head'))]"/>
+    </record>
+
+    <record id="assetflow_employee_manager_rule" model="ir.rule">
+        <field name="name">AssetFlow: managers see all employees</field>
+        <field name="model_id" ref="model_assetflow_employee"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager'))]"/>
+    </record>
+
+    <record id="assetflow_employee_admin_rule" model="ir.rule">
+        <field name="name">AssetFlow: administrators see all employees</field>
+        <field name="model_id" ref="model_assetflow_employee"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_admin'))]"/>
+    </record>
+
+    <record id="assetflow_notification_own_rule" model="ir.rule">
+        <field name="name">AssetFlow: users read only their own notifications</field>
+        <field name="model_id" ref="model_assetflow_notification"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <record id="assetflow_notification_admin_rule" model="ir.rule">
+        <field name="name">AssetFlow: administrators see all notifications</field>
+        <field name="model_id" ref="model_assetflow_notification"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_admin'))]"/>
+    </record>
+</odoo>

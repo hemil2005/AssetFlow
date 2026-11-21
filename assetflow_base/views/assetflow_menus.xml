@@ -1,30 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="action_assetflow_employee_directory" model="ir.actions.act_window">
-        <field name="name">Employee Directory</field>
-        <field name="res_model">hr.employee</field>
-        <field name="view_mode">list,form</field>
-        <field name="domain">[('active', '=', True)]</field>
-    </record>
-
     <menuitem id="menu_assetflow_root" name="AssetFlow" sequence="10"/>
 
     <menuitem id="menu_assetflow_organization" name="Organization"
               parent="menu_assetflow_root" sequence="10"/>
 
-    <menuitem id="menu_assetflow_employee_directory" name="Employee Directory"
-              parent="menu_assetflow_organization"
-              action="action_assetflow_employee_directory"
+    <menuitem id="menu_assetflow_department" name="Departments"
+              parent="menu_assetflow_organization" action="action_assetflow_department"
               groups="assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_asset_manager,assetflow_base.group_assetflow_department_head"
               sequence="10"/>
 
+    <menuitem id="menu_assetflow_employee" name="Employee Directory"
+              parent="menu_assetflow_organization" action="action_assetflow_employee"
+              groups="assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_asset_manager,assetflow_base.group_assetflow_department_head"
+              sequence="20"/>
+
+    <menuitem id="menu_assetflow_my_employee" name="My Employee Record"
+              parent="menu_assetflow_organization" action="action_assetflow_my_employee"
+              groups="assetflow_base.group_assetflow_employee" sequence="25"/>
+
     <menuitem id="menu_assetflow_configuration" name="Configuration"
-              parent="menu_assetflow_root"
-              groups="assetflow_base.group_assetflow_admin"
-              sequence="90"/>
+              parent="menu_assetflow_organization"
+              groups="assetflow_base.group_assetflow_admin" sequence="90"/>
 
     <menuitem id="menu_assetflow_category" name="Asset Categories"
-              parent="menu_assetflow_configuration"
-              action="action_assetflow_category"
+              parent="menu_assetflow_configuration" action="action_assetflow_category"
               sequence="10"/>
+
+    <menuitem id="menu_assetflow_notification" name="Notifications"
+              parent="menu_assetflow_root" action="action_assetflow_notification"
+              groups="assetflow_base.group_assetflow_employee" sequence="80"/>
+
+    <menuitem id="menu_assetflow_activity_log" name="Activity Logs"
+              parent="menu_assetflow_root" action="action_assetflow_activity_log"
+              groups="assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_asset_manager"
+              sequence="90"/>
 </odoo>
