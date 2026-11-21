@@ -364,7 +364,7 @@ class AssetflowMaintenanceRequest(models.Model):
     @api.model
     def _cron_flag_aging_requests(self):
         cutoff = fields.Datetime.now() - timedelta(days=2)
-        day_start = fields.Datetime.to_datetime(fields.Date.context_today(self))
+        day_start = fields.Datetime.start_of(fields.Datetime.now(), 'day')
         notification_model = self.env['assetflow.notification'].sudo()
         requests = self.search([('state', '=', 'pending'), ('create_date', '<', cutoff)])
         for request in requests:

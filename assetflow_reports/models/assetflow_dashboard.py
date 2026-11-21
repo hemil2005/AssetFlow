@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from babel import Locale
 from babel.dates import get_day_names
@@ -9,6 +9,18 @@ from odoo import api, fields, models
 class AssetflowDashboard(models.TransientModel):
     _name = 'assetflow.dashboard'
     _description = 'AssetFlow Dashboard'
+
+    @api.private
+    def _day_bounds_utc(self, day):
+        """UTC bounds of ``day`` in the current user's timezone (M18)."""
+        local_now = fields.Datetime.context_timestamp(
+            self, fields.Datetime.to_datetime(fields.Datetime.now()),
+        )
+        local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        local_start = local_start.replace(year=day.year, month=day.month, day=day.day)
+        start = local_start.astimezone(timezone.utc).replace(tzinfo=None)
+        end = (local_start + timedelta(days=1)).astimezone(timezone.utc).replace(tzinfo=None)
+        return start, end
 
     @api.private
     def _allocation_row(self, allocation):
@@ -29,8 +41,7 @@ class AssetflowDashboard(models.TransientModel):
         active = ('state', '=', 'active')
 
         maintenance_assets = self.env['assetflow.asset'].search_count([('state', '=', 'maintenance')])
-        day_start = fields.Datetime.to_datetime(today)
-        day_end = day_start + timedelta(days=1)
+        day_start, day_end = self._day_bounds_utc(today)
         approved_today_ids = self.env['assetflow.maintenance.request'].search([
             ('state', 'in', ('approved', 'assigned', 'in_progress')),
             ('approved_at', '>=', day_start),
@@ -147,8 +158,8 @@ class AssetflowDashboard(models.TransientModel):
         if date_to < date_from:
             date_from, date_to = date_to, date_from
 
-        start = fields.Datetime.to_datetime(date_from)
-        end = fields.Datetime.to_datetime(date_to) + timedelta(days=1)
+        start, _ = self._day_bounds_utc(date_from)
+        _, end = self._day_bounds_utc(date_to)
         groups = self.env['assetflow.booking']._read_group(
             [
                 ('state', '!=', 'cancelled'),
