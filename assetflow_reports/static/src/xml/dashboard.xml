@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="assetflow_reports.Dashboard">
-        <div class="af-dashboard">
+        <div t-att-class="'af-dashboard' + (state.loading &amp;&amp; state.data ? ' is-refreshing' : '')">
             <header class="af-topbar">
                 <div class="af-topbar-id">
                     <h1 class="af-title">
@@ -9,9 +9,9 @@
                         <span class="af-title-page">Dashboard</span>
                     </h1>
                     <p class="af-meta" t-if="state.data">Updated at <t t-out="updatedLabel"></t></p>
-                    <p class="af-meta" t-else=""><span class="af-sk af-sk-meta"></span></p>
+                    <p class="af-meta" t-elif="state.loading"><span class="af-sk af-sk-meta"></span></p>
                 </div>
-                <div class="af-topbar-actions">
+                <div class="af-topbar-actions" t-if="state.data">
                     <button type="button"
                             t-att-class="state.loading ? 'af-icon-btn is-busy' : 'af-icon-btn'"
                             t-att-disabled="state.loading"
@@ -41,7 +41,7 @@
                 </div>
             </header>
 
-            <div t-if="state.loading" class="af-skeleton" role="status" aria-live="polite">
+            <div t-if="state.loading &amp;&amp; !state.data" class="af-skeleton" role="status" aria-live="polite">
                 <span class="af-visually-hidden">Loading dashboard</span>
                 <div class="af-sk-readout" aria-hidden="true">
                     <div class="af-sk-cluster" t-foreach="kpiGroups" t-as="group" t-key="group.key">
@@ -60,13 +60,19 @@
                 </div>
             </div>
 
-            <div t-elif="state.error" class="af-error">
+            <div t-elif="state.error &amp;&amp; !state.data" class="af-error">
                 <p class="af-error-title">The dashboard could not load.</p>
                 <p class="af-error-detail" t-out="state.error"/>
                 <button type="button" class="btn af-btn btn-secondary" t-on-click="load">Try again</button>
             </div>
 
             <t t-else="">
+                <div t-if="state.error" class="af-error" role="alert">
+                    <p class="af-error-title">Refresh failed. These figures may be out of date.</p>
+                    <p class="af-error-detail" t-out="state.error"/>
+                    <button type="button" class="btn af-btn btn-secondary" t-on-click="load">Try again</button>
+                </div>
+
                 <section class="af-readout" aria-label="Key figures">
                     <div t-foreach="kpiGroups" t-as="group" t-key="group.key"
                          t-att-class="'af-readout-group af-readout-' + group.key + (group.flagged ? ' is-flagged' : '')">

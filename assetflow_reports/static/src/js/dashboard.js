@@ -4,8 +4,8 @@ import { useService } from "@web/core/utils/hooks";
 import {
     deserializeDate,
     deserializeDateTime,
-    formatDate,
-    formatDateTime,
+    toLocaleDateString,
+    toLocaleDateTimeString,
     today,
 } from "@web/core/l10n/dates";
 
@@ -30,7 +30,11 @@ export class AssetflowDashboard extends Component {
         this.hourTicks = Array.from({ length: 24 }, (_, hour) =>
             hour % 3 === 0 ? String(hour).padStart(2, "0") : ""
         );
-        onWillStart(() => this.load());
+        onWillStart(() => {
+            // Render the skeleton first: the dashboard must not hold the tab
+            // hostage on an RPC. Errors land in state and render as UI.
+            this.load();
+        });
     }
 
     async load() {
@@ -60,7 +64,7 @@ export class AssetflowDashboard extends Component {
         if (!this.state.data) {
             return "";
         }
-        return formatDateTime(deserializeDateTime(this.state.data.generated_at));
+        return toLocaleDateTimeString(deserializeDateTime(this.state.data.generated_at));
     }
 
     /** The nine KPI values, grouped the way an operator reads them. */
@@ -107,7 +111,7 @@ export class AssetflowDashboard extends Component {
     }
 
     shortDate(value) {
-        return value ? formatDate(deserializeDate(value)) : "";
+        return value ? toLocaleDateString(deserializeDate(value)) : "";
     }
 
     /** "3d late" / "due today" / "in 5d" for a date-only SQL string. */
