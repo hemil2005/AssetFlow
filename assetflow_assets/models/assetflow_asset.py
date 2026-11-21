@@ -85,7 +85,7 @@ class AssetflowAsset(models.Model):
         return overdue if wants_overdue else not_overdue
 
     def _compute_history_count(self):
-        maintenance_installed = self.env['ir.model'].sudo().search_count([('model', '=', 'assetflow.maintenance.request')])
+        maintenance_installed = 'assetflow.maintenance.request' in self.env.registry.models
         for asset in self:
             extra = (
                 self.env['assetflow.maintenance.request'].search_count([('asset_id', '=', asset.id)])
@@ -131,7 +131,7 @@ class AssetflowAsset(models.Model):
 
     @api.private
     def _has_current_booking(self):
-        if not self.env['ir.model'].sudo().search_count([('model', '=', 'assetflow.booking')]):
+        if 'assetflow.booking' not in self.env.registry.models:
             return False
         now = fields.Datetime.now()
         return bool(self.env['assetflow.booking'].search_count([
