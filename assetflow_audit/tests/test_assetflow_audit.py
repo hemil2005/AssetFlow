@@ -121,3 +121,53 @@ class TestAssetflowAudit(TransactionCase):
         self.assertNotIn(cycle, visible)
         with self.assertRaises(Exception):
             cycle.with_user(self.other_user).read(['name'])
+
+    def test_direct_state_write_is_rejected(self):
+        cycle = self._started_cycle()
+        with self.assertRaises(UserError):
+            cycle.write({'state': 'closed'})
+        self.assertEqual(cycle.state, 'in_progress')
+
+    def test_expected_location_snapshot_cannot_be_rewritten(self):
+        cycle = self._started_cycle()
+        line = cycle.line_ids[0]
+        with self.assertRaises(UserError):
+            line.with_user(self.auditor_user).write({
+                'expected_location': 'REWRITTEN-BY-AUDITOR',
+            })
+
+    def test_lines_cannot_be_added_after_start(self):
+        cycle = self._started_cycle()
+        asset = self.env['assetflow.asset'].create({
+            'name': 'Late asset', 'asset_tag': 'AF-AUD-3',
+            'category_id': self.category.id, 'department_id': self.department.id,
+        })
+        with self.assertRaises(UserError):
+            self.env['assetflow.audit.line'].with_user(self.manager).create({
+                'cycle_id': cycle.id, 'asset_id': asset.id,
+            })
+
+    def test_discrepancy_notifies_auditors_and_managers(self):
+        cycle = self._started_cycle()
+        manager_user = self.manager
+        line = cycle.line_ids.filtered(lambda record: record.asset_id == self.asset)
+        before = self.env['assetflow.notification'].search_count([
+            ('notification_type', '=', 'audit'),
+            ('user_id', 'in', (self.auditor_user | manager_user).ids),
+        ])
+        line.with_user(self.auditor_user).write({'result': 'missing'})
+        after = self.env['assetflow.notification'].search_count([
+            ('notification_type', '=', 'audit'),
+            ('user_id', 'in', (self.auditor_user | manager_user).ids),
+        ])
+        self.assertGreater(after, before)
+
+    def test_start_with_empty_scope_is_rejected(self):
+        cycle = self.env['assetflow.audit.cycle'].create({
+            'name': 'Empty scope',
+            'scope_department_id': self.other_department.id,
+            'date_from': fields.Date.today(),
+            'date_to': fields.Date.today(),
+        }).with_user(self.manager)
+        with self.assertRaises(UserError):
+            cycle.action_start()

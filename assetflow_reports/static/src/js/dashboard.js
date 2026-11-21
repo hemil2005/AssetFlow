@@ -9,20 +9,40 @@ export class AssetflowDashboard extends Component {
     setup() {
         this.orm = useService("orm");
         this.action = useService("action");
+        this.user = useService("user");
         this.state = useState({ data: null, loading: true, error: null });
         onWillStart(() => this.load());
+    }
+
+    get canManageAssets() {
+        return this.user.hasGroup("assetflow_base.group_assetflow_asset_manager")
+            || this.user.hasGroup("assetflow_base.group_assetflow_admin");
     }
 
     async load() {
         this.state.loading = true;
         try {
-            this.state.data = await this.orm.call("assetflow.dashboard", "get_kpi_data", []);
+            const [kpi, recent, heatmap] = await Promise.all([
+                this.orm.call("assetflow.dashboard", "get_kpi_data", []),
+                this.orm.call("assetflow.dashboard", "get_recent_activity", []),
+                this.orm.call("assetflow.dashboard", "get_booking_heatmap", []),
+            ]);
+            this.state.data = { ...kpi, ...recent, heatmap };
             this.state.error = null;
         } catch (error) {
             this.state.error = error.message || String(error);
         } finally {
             this.state.loading = false;
         }
+    }
+
+    heatStyle(count) {
+        const max = (this.state.data && this.state.data.heatmap && this.state.data.heatmap.max) || 0;
+        if (!count || !max) {
+            return "";
+        }
+        const ratio = Math.min(count / max, 1);
+        return `background-color: rgba(113, 75, 103, ${(0.12 + ratio * 0.7).toFixed(2)});`;
     }
 
     openAsset(assetId) {

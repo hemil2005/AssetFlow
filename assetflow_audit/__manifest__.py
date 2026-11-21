@@ -17,7 +17,6 @@
     'data': [
         'security/assetflow_audit_security.xml',
         'security/ir.model.access.csv',
-        'data/assetflow_audit_sequence.xml',
         'views/assetflow_audit_cycle_views.xml',
         'views/assetflow_audit_line_views.xml',
         'views/assetflow_audit_menus.xml',

@@ -10,10 +10,7 @@
                         <p>
                             <strong>Members:</strong> <span t-out="doc.member_count"/>
                         </p>
-                        <t t-set="assets" t-value="doc.env['assetflow.asset'].search([
-                            ('department_id', '=', doc.id),
-                            ('state', '!=', 'disposed'),
-                        ])"/>
+                        <t t-set="assets" t-value="doc.report_asset_rows()"/>
                         <table class="table table-sm">
                             <thead>
                                 <tr>

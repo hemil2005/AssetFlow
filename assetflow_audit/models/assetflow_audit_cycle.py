@@ -1,5 +1,5 @@
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 
 class AssetflowAuditCycle(models.Model):
@@ -46,7 +46,7 @@ class AssetflowAuditCycle(models.Model):
     def _check_dates(self):
         for cycle in self:
             if cycle.date_to < cycle.date_from:
-                raise UserError(_('The audit end date cannot be before its start date.'))
+                raise ValidationError(_('The audit end date cannot be before its start date.'))
 
     @api.private
     def _require_manager(self):
@@ -60,7 +60,13 @@ class AssetflowAuditCycle(models.Model):
         if self.scope_department_id:
             domain.append(('department_id', '=', self.scope_department_id.id))
         if self.scope_location:
-            domain.append(('location', 'ilike', self.scope_location))
+            pattern = (
+                self.scope_location
+                .replace('\\', '\\\\')
+                .replace('%', '\\%')
+                .replace('_', '\\_')
+            )
+            domain.append(('location', 'ilike', pattern))
         return domain
 
     @api.private
@@ -81,6 +87,8 @@ class AssetflowAuditCycle(models.Model):
                 raise UserError(_('Only a draft audit can be started.'))
             cycle.lock_for_update()
             assets = self.env['assetflow.asset'].search(cycle._scope_domain())
+            if not assets:
+                raise UserError(_('No assets match this audit scope.'))
             existing = set(cycle.line_ids.asset_id.ids)
             to_create = assets.filtered(lambda asset: asset.id not in existing)
             if to_create:
@@ -92,7 +100,7 @@ class AssetflowAuditCycle(models.Model):
                     }
                     for asset in to_create
                 ])
-            cycle.write({'state': 'in_progress'})
+            cycle.with_context(allow_audit_write=True).write({'state': 'in_progress'})
             cycle.message_post(body=_('Audit %s started with %s asset(s).', cycle.reference, len(assets)))
             cycle._notify_auditors(
                 _('Audit started: %s', cycle.name),
@@ -151,7 +159,14 @@ class AssetflowAuditCycle(models.Model):
 
     def write(self, vals):
         if not self.env.context.get('allow_audit_write'):
+            if {'state', 'closed_by', 'closed_at'} & set(vals):
+                raise UserError(_('Use the audit actions to change the cycle status.'))
             closed = self.filtered(lambda cycle: cycle.state == 'closed')
             if closed:
                 raise UserError(_('A closed audit cannot be modified.'))
         return super().write(vals)
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_if_draft(self):
+        if any(cycle.state != 'draft' or cycle.line_ids for cycle in self):
+            raise UserError(_('Only an empty draft audit can be deleted.'))

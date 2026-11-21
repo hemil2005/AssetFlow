@@ -16,6 +16,7 @@ class AssetflowAsset(models.Model):
     def action_audit_mark_lost(self, reason=None):
         """Trusted audit-close transition; the caller is the audit workflow."""
         for asset in self:
+            asset.lock_for_update()
             if asset.state not in ('available', 'reserved'):
                 raise UserError(_('Audit close cannot mark %s lost from %s.', asset.asset_tag, asset.state))
             asset.with_context(allow_state_write=True).write({'state': 'lost'})

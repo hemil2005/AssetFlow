@@ -74,8 +74,20 @@ class TestAssetflowReports(TransactionCase):
         self.assertEqual(data['open_maintenance'], 1)
         self.assertEqual(data['upcoming_returns'], 1)
         self.assertEqual(data['overdue_returns'], 0)
-        self.assertIn('recent_upcoming', data)
-        self.assertIn('recent_notifications', data)
+        self.assertEqual(data['maintenance_today'], 0)
+        self.assertEqual(
+            set(data),
+            {
+                'assets_available', 'assets_allocated', 'maintenance_today',
+                'active_bookings', 'pending_transfers', 'upcoming_returns',
+                'overdue_returns', 'open_maintenance', 'unread_notifications',
+                'generated_at',
+            },
+        )
+        recent = self.env['assetflow.dashboard'].with_user(self.manager_user).get_recent_activity()
+        self.assertEqual(recent['recent_upcoming'][0]['asset_tag'], 'AF-REP-2')
+        self.assertEqual(recent['recent_overdue'], [])
+        self.assertIn('recent_log', recent)
 
     def test_dashboard_respects_record_rules(self):
         data = self.env['assetflow.dashboard'].with_user(self.employee_user).get_kpi_data()
@@ -84,6 +96,26 @@ class TestAssetflowReports(TransactionCase):
         self.assertEqual(data['active_bookings'], 1)
         self.assertEqual(data['open_maintenance'], 0)
         self.assertEqual(data['unread_notifications'], 1)
+        recent = self.env['assetflow.dashboard'].with_user(self.employee_user).get_recent_activity()
+        self.assertEqual(recent['recent_log'], [])
+        self.assertEqual(len(recent['recent_notifications']), 1)
+
+    def test_kpi_query_budget(self):
+        # 12 count queries plus ORM flush overhead; a regression that loads
+        # allocations per record would blow far past this.
+        with self.assertQueryCount(40):
+            self.env['assetflow.dashboard'].with_user(self.manager_user).get_kpi_data()
+
+    def test_near_retirement_filter(self):
+        old_asset = self.env['assetflow.asset'].create({
+            'name': 'Old Laptop', 'asset_tag': 'AF-REP-8',
+            'category_id': self.category.id, 'department_id': self.department.id,
+            'acquisition_date': fields.Date.today() - timedelta(days=365 * 6),
+        })
+        self.assertTrue(old_asset.is_near_retirement)
+        found = self.env['assetflow.asset'].search([('is_near_retirement', '=', True)])
+        self.assertIn(old_asset, found)
+        self.assertNotIn(self.available, found)
 
     def test_dashboard_is_read_only_for_users(self):
         dashboard = self.env['assetflow.dashboard'].with_user(self.employee_user)
@@ -104,3 +136,62 @@ class TestAssetflowReports(TransactionCase):
             html = html.decode()
         self.assertIn('Department Allocation Summary', html)
         self.assertIn('AF-REP-1', html)
+
+    def test_booking_heatmap_buckets(self):
+        now = fields.Datetime.now()
+        tomorrow = now + timedelta(days=1)
+        first = tomorrow.replace(hour=10, minute=0, second=0, microsecond=0)
+        second = tomorrow.replace(hour=15, minute=0, second=0, microsecond=0)
+        room_a = self.env['assetflow.asset'].create({
+            'name': 'Room Heat A', 'asset_tag': 'AF-REP-5',
+            'category_id': self.category.id, 'department_id': self.department.id,
+            'is_bookable': True,
+        })
+        room_b = self.env['assetflow.asset'].create({
+            'name': 'Room Heat B', 'asset_tag': 'AF-REP-6',
+            'category_id': self.category.id, 'department_id': self.department.id,
+            'is_bookable': True,
+        })
+        for room, start in ((room_a, first), (room_b, second)):
+            self.env['assetflow.booking'].with_user(self.manager_user).create({
+                'asset_id': room.id,
+                'employee_id': self.employee.id,
+                'start_datetime': start,
+                'end_datetime': start + timedelta(hours=1),
+            })
+
+        heatmap = self.env['assetflow.dashboard'].with_user(self.manager_user).get_booking_heatmap()
+        self.assertEqual(len(heatmap['rows']), 7)
+        self.assertTrue(all(len(row['hours']) == 24 for row in heatmap['rows']))
+        self.assertGreaterEqual(heatmap['max'], 1)
+        self.assertGreaterEqual(heatmap['total'], 3)
+
+        for start in (first, second):
+            day = start.isoweekday() % 7
+            self.assertGreaterEqual(heatmap['rows'][day]['hours'][start.hour], 1)
+
+    def test_booking_heatmap_respects_record_rules(self):
+        now = fields.Datetime.now()
+        tomorrow = now + timedelta(days=1)
+        room = self.env['assetflow.asset'].create({
+            'name': 'Room Heat C', 'asset_tag': 'AF-REP-7',
+            'category_id': self.category.id, 'department_id': self.department.id,
+            'is_bookable': True,
+        })
+        start = tomorrow.replace(hour=11, minute=0, second=0, microsecond=0)
+        self.env['assetflow.booking'].with_user(self.manager_user).create({
+            'asset_id': room.id,
+            'employee_id': self.manager.id,
+            'start_datetime': start,
+            'end_datetime': start + timedelta(hours=1),
+        })
+
+        manager_heatmap = self.env['assetflow.dashboard'].with_user(self.manager_user).get_booking_heatmap()
+        employee_heatmap = self.env['assetflow.dashboard'].with_user(self.employee_user).get_booking_heatmap()
+        self.assertGreater(manager_heatmap['total'], employee_heatmap['total'])
+        day = start.isoweekday() % 7
+        self.assertEqual(employee_heatmap['rows'][day]['hours'][start.hour], 0)
+
+    def test_dashboard_action_is_registered(self):
+        action = self.env.ref('assetflow_reports.action_assetflow_dashboard')
+        self.assertEqual(action.tag, 'assetflow_reports.dashboard')

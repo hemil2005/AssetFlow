@@ -88,3 +88,63 @@
     padding: 24px;
     color: var(--text-muted, #6c757d);
 }
+
+.af-panel-wide {
+    grid-column: 1 / -1;
+    margin-top: 16px;
+}
+
+.af-heatmap-panel h3 small {
+    font-size: 0.75rem;
+    font-weight: normal;
+    margin-left: 8px;
+}
+
+.af-heatmap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-x: auto;
+}
+
+.af-heatmap-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.af-heatmap-label {
+    width: 34px;
+    flex: 0 0 34px;
+    color: var(--text-muted, #6c757d);
+    font-size: 0.75rem;
+}
+
+.af-heatmap-cell {
+    flex: 1 0 24px;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    background: var(--border-color, #e9ecef);
+    color: #fff;
+    font-size: 0.65rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.af-heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    color: var(--text-muted, #6c757d);
+    font-size: 0.75rem;
+}
+
+.af-heatmap-legend-bar {
+    width: 140px;
+    height: 10px;
+    border-radius: 2px;
+    background: linear-gradient(to right, rgba(113, 75, 103, 0.12), rgba(113, 75, 103, 0.82));
+}

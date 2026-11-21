@@ -16,4 +16,7 @@
 
     <menuitem id="menu_assetflow_report_bookings" name="Booking Load"
               parent="menu_assetflow_reports" action="action_assetflow_report_bookings" sequence="30"/>
+
+    <menuitem id="menu_assetflow_report_retirement" name="Assets Due / Near Retirement"
+              parent="menu_assetflow_reports" action="action_assetflow_report_retirement" sequence="40"/>
 </odoo>

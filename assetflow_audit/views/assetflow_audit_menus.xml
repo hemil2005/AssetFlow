@@ -2,11 +2,25 @@
 <odoo>
     <menuitem id="menu_assetflow_audit" name="Audits"
               parent="assetflow_base.menu_assetflow_root" sequence="45"
-              groups="assetflow_base.group_assetflow_employee"/>
+              groups="assetflow_base.group_assetflow_asset_manager,assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_department_head"/>
 
     <menuitem id="menu_assetflow_audit_cycle" name="Audit Cycles"
               parent="menu_assetflow_audit" action="action_assetflow_audit_cycle" sequence="10"/>
 
     <menuitem id="menu_assetflow_audit_line" name="Audit Lines"
               parent="menu_assetflow_audit" action="action_assetflow_audit_line" sequence="20"/>
+
+    <record id="action_assetflow_my_audits" model="ir.actions.act_window">
+        <field name="name">My Audits</field>
+        <field name="res_model">assetflow.audit.cycle</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_assetflow_audit_cycle_search"/>
+        <field name="domain">[('auditor_ids.user_id', '=', uid)]</field>
+        <field name="group_ids" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <menuitem id="menu_assetflow_my_audits" name="My Audits"
+              parent="assetflow_base.menu_assetflow_root" sequence="46"
+              action="action_assetflow_my_audits"
+              groups="assetflow_base.group_assetflow_employee"/>
 </odoo>
