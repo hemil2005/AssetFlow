@@ -10,9 +10,9 @@ agent may have landed work.
 | Path | `E:\Mumur\AssetFlow` |
 | Remote | `https://github.com/hemil2005/AssetFlow` (public) |
 | Branch | `main`, tracking `origin/main` |
-| HEAD | `f4625d3 odoo-skills` (dakshshah2099, 2026-11-21) |
-| Working tree | clean, no uncommitted changes |
-| Other branches | none local or remote |
+| HEAD | `455b7b8 docs: implementation contracts...` |
+| Working tree | clean on `main`; addon work is on feature branches |
+| Other branches | `feat/assetflow-base` @ `0b3e05a`, `feat/assetflow-booking` @ `b04646a` (both changes requested) |
 
 Commit history:
 
@@ -30,13 +30,16 @@ e199108 first commit
 
 | Path | State |
 |------|-------|
-| `README.md` | one line: `# AssetFlow` |
-| `AGENTS.md`, `CLAUDE.md` | Murmur section only |
+| `README.md` | project overview, docs links, quick start |
+| `AGENTS.md`, `CLAUDE.md` | Murmur + project rules + Murmur-message rule |
 | `AssetFlow problem statement.pdf` | 5-page brief (source of requirements) |
 | `.opencode/skills/` | 21 skill folders, 127 tracked files, committed in `f4625d3` |
-| `docs/` | this documentation set (new) |
-| `docker-compose.yml`, `addons/`, `assetflow_*/` | **do not exist yet** |
-| `requirements.txt`, `.venv/`, `*.cfg`, tests, CI | **do not exist yet** |
+| `docs/` | research, specs, instructions, reviews |
+| `.gitignore` | Python bytecode, venvs, env files, Odoo runtime data |
+| `assetflow_base`, `assetflow_assets`, `assetflow_booking` | on feature branches, not merged |
+| `docker-compose.yml`, `.env.example`, `scripts/` | **do not exist yet** (patient-wallaby) |
+| `assetflow_maintenance`, `assetflow_audit`, `assetflow_reports` | **do not exist yet** |
+| `requirements.txt`, `.venv/`, CI | **do not exist yet** |
 
 ### Skills present (repo-scoped, not global)
 
@@ -87,8 +90,11 @@ satisfy the Python side.
 |----------|--------|------|
 | Hemil (human) | `device-54f4143c` | product owner |
 | dakshshah2099 (human) | `device-f7d42339` | product owner / developer |
-| northern-envelope (opencode) | `device-54f4143c/b22fe3` | docs, verification, later Audit/Reports |
-| flat-orchid (opencode) | `device-f7d42339/399ac5` | addon scaffold and all addon code for now |
+| northern-envelope (opencode) | `device-54f4143c/b22fe3` | docs, review gate, later Audit/Reports |
+| flat-orchid (opencode) | `device-f7d42339/399ac5` | all addon code; base/assets/booking fixes |
+| patient-wallaby (opencode) | `device-54f4143c/c1af5b` | env/verification harness, then Maintenance |
+| tasseled-chisel (antigravity) | `device-7db7b502/94abab` | withdrawn (owner offline) |
+| pleasing-dumpling (antigravity) | `device-54f4143c/3b2650` | excluded, muted |
 
 Murmur is joined and working in this clone. The remote carries `refs/murmur/*`; see `mur ui`.
 
@@ -103,30 +109,40 @@ Murmur is joined and working in this clone. The remote carries `refs/murmur/*`; 
 
 ## 4. What is missing
 
-1. No addon code yet: no `__manifest__.py`, models, views, security, tests.
-2. No running database on Hemil's machine (Docker daemon stopped, no local PostgreSQL).
-3. No `docker-compose.yml`, no seeded demo data, no fixtures.
-4. No README quick start, no CI, no deployment target.
-5. No confirmed module name per addon beyond the prefix and the six listed responsibilities.
-6. No decision yet on QR generation, PDF export hosting, or multi-company support.
+1. Addon code exists only on `feat/assetflow-base` and `feat/assetflow-booking`; both are **changes
+   requested** and not merged. Maintenance, audit, and reports are not started.
+2. No running database on Hemil's machine (Docker daemon stopped, no local PostgreSQL); flat-orchid
+   runs Odoo 19 on daksh's machine and reports install/tests there.
+3. No `docker-compose.yml`, no seeded demo data, no CI, no deployment target (patient-wallaby owns
+   the harness).
+4. The base security model still exposes HR data and lacks allocation/transfer record rules; see the
+   review findings B1-B10.
+5. Signup, department management, and role-promotion UI are missing (B4-B6).
+6. QR generation, forgot-password behavior, and report export need an explicit decision (see
+   `docs/spec/traceability.md`).
 
 ## 5. Risks and open questions
 
 | Risk / question | Impact | Proposed handling |
 |-----------------|--------|-------------------|
 | Local skill claims differ from Odoo 19 source in a few places | wrong API usage | verified facts in `research/odoo-19-platform.md#11-corrections-to-the-local-skills`; always cross-check `$ODOO_SOURCE` |
+| HR reuse exposes private employee fields | security/privacy failure | B3: implement custom employee/department or restrict reads to `hr.employee.public` and update ADR-0002 |
+| Missing allocation/transfer record rules | every internal user can read/edit transfers | B2: add rules before any merge |
 | Double-allocation and booking overlap under concurrency | data corruption, failed demo | DB-level `models.UniqueIndex` for active allocation; `lock_for_update()` before overlap checks |
-| Signup must create an Employee with no role, while Odoo signup defaults to portal | broken auth flow | ADR-0002: extend `auth_signup`; test with a real signup tour |
+| Signup must create an Employee with no role, while Odoo signup defaults to portal | broken auth flow | ADR-0002: extend `auth_signup`; test with a real signup tour (B4) |
 | Department Head scoping via record rules is easy to over-restrict | empty screens | test ACLs with `new_test_user` for every role |
-| Booking "Reserved" asset state can fight maintenance/allocation | inconsistent lifecycle | single-writer transition methods + state tests |
-| PDF/report export on Windows needs wkhtmltopdf | missing reports in demo | Docker image includes it; document the source-install fix |
+| Booking "Reserved" asset state can fight maintenance/allocation | inconsistent lifecycle | single-writer transition methods + state tests (B10) |
+| PNG/PDF export on Windows needs wkhtmltopdf | missing reports in demo | Docker image includes it; document the source-install fix |
 | Timezones in booking overlap | off-by-one-hour bugs | store UTC, compare UTC, display in user tz; test boundaries |
 | Six addons multiply manifest/security wiring | slow setup | dependency graph in ADR-0001; install in order; one security CSV per addon |
 | No deployment target yet | demo-day risk | Docker Compose locally; decide hosting in Phase 8 |
 
 ## 6. Immediate next actions
 
-1. flat-orchid: land `assetflow_base` manifest, groups, category, department, employee, sequence.
-2. Hemil: start Docker Desktop (or install PostgreSQL) so a database can be created locally.
-3. Both: agree the exact module technical names and the addon folder paths.
-4. northern-envelope: hand the docs to flat-orchid for a consistency pass once the base models land.
+1. flat-orchid: fix B1-B9 on `feat/assetflow-base`, rebase booking, fix B10/M13, push both.
+2. patient-wallaby: push `chore/env-harness`; take maintenance after the base gate.
+3. Hemil: start Docker Desktop so the harness and independent test runs can proceed.
+4. northern-envelope: re-review both branches on the next push; then implement Audit/Reports from the
+   implementation contracts in `docs/spec/`.
+5. Resolve the employee/department decision (custom models vs HR public directory) before more code
+   depends on it.

@@ -33,6 +33,21 @@ each phase can be demoed on its own and no phase depends on work that has not la
 Phases 3, 4, and 5 are independent after Phase 2 and can run in parallel if each claims separate
 addons. Phase 6 starts only when the models it aggregates are stable.
 
+### Current status (2026-11-21)
+
+| Phase | Status | Branch / note |
+|-------|--------|---------------|
+| 0 | in progress | docs + `.gitignore` on main; harness assigned to patient-wallaby |
+| 1 | changes requested | `feat/assetflow-base` @ `0b3e05a`; blockers B1-B9 |
+| 2 | changes requested | same branch; blockers B1-B10 |
+| 3 | changes requested | `feat/assetflow-booking` @ `b04646a`; B10 + M13 |
+| 4 | queued | patient-wallaby after the base gate |
+| 5 | contract ready | `docs/spec/audit-implementation.md` |
+| 6 | contract ready | `docs/spec/reports-implementation.md` |
+| 7 | not started | needs a stable demo and the harness |
+
+The full finding list is in [`../reviews/2026-11-21-base-assets-booking.md`](../reviews/2026-11-21-base-assets-booking.md).
+
 ## Phase 0 — Repo and environment
 
 **Owner:** northern-envelope (docs), Hemil (Docker), flat-orchid (source install)
@@ -212,8 +227,10 @@ Acceptance:
 
 | Track | Files | Owner |
 |-------|-------|-------|
-| Booking | `assetflow_booking/**` | flat-orchid or tasseled-chisel |
-| Maintenance | `assetflow_maintenance/**` | flat-orchid or pleasing-dumpling |
+| Booking | `assetflow_booking/**` | flat-orchid |
+| Maintenance | `assetflow_maintenance/**` | patient-wallaby |
+| Audit | `assetflow_audit/**` | northern-envelope |
+| Reports | `assetflow_reports/**` | northern-envelope |
 | Audit | `assetflow_audit/**` | northern-envelope (after handoff) |
 | Reports | `assetflow_reports/**` | northern-envelope (after handoff) |
 | Verification | `docs/instructions/verification.md`, test runs | rotating reviewer |
