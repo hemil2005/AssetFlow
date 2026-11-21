@@ -51,7 +51,7 @@ Second review of `5c831a5` / `55025a4`: [`2026-11-21-second-review.md`](2026-11-
 | B4 | H | spec | signup missing | flat-orchid | **closed structurally** (test green) |
 | B5 | H | spec | department model/screen missing | flat-orchid | **closed structurally** |
 | B6 | H | spec | role promotion UI missing | flat-orchid | **closed structurally** |
-| B7 | H | lifecycle | unguarded transitions/destructive actions | flat-orchid | **structurally fixed**; scenario tests pending |
+| B7 | H | lifecycle | unguarded transitions/destructive actions | flat-orchid | **reopened**: RPC can write `state`, `asset_tag`, past `expected_return_date` (probe) |
 | B8 | H | integrity | allocation edit/department sync; unallocated transfer; employee transfer target | flat-orchid | **open** |
 | B9 | H | spec | return condition/notes | flat-orchid | **closed** |
 | B10 | H | booking | immediate reserve; reminder crash without login | flat-orchid | **open** |
