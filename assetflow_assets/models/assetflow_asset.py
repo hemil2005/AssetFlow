@@ -207,10 +207,16 @@ class AssetflowAsset(models.Model):
         }
 
     def action_reserve(self):
-        self._transition('reserved', ['available'])
+        """Public workflow method used by booking; no UI permission of its own."""
+        for asset in self:
+            if asset.state == 'available':
+                asset.write({'state': 'reserved'})
 
     def action_release(self):
-        self._transition('available', ['reserved'])
+        """Public workflow method used by booking; no UI permission of its own."""
+        for asset in self:
+            if asset.state == 'reserved':
+                asset.write({'state': 'available'})
 
     def action_set_maintenance(self, reason=None):
         self._transition('maintenance', ['available', 'allocated', 'reserved'],
