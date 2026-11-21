@@ -81,6 +81,14 @@ class AssetflowMaintenanceRequest(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            # Workflow-owned fields are never accepted from the caller.
+            vals['state'] = 'pending'
+            for field in (
+                'approved_by', 'approved_at', 'rejection_reason', 'technician_id',
+                'assigned_at', 'started_at', 'resolved_at', 'resolution_notes',
+                'previous_asset_state',
+            ):
+                vals.pop(field, None)
             if not vals.get('raised_by_id'):
                 vals['raised_by_id'] = self.env.user.employee_id.id
             if not vals['raised_by_id']:
@@ -199,7 +207,11 @@ class AssetflowMaintenanceRequest(models.Model):
                     'Asset %s is booked right now. Cancel or finish the booking before approving maintenance.',
                     asset.asset_tag,
                 ))
-            if asset.state == 'reserved':
+            if 'assetflow.booking' in self.env.registry.models and self.env['assetflow.booking'].sudo().search_count([
+                ('asset_id', '=', asset.id),
+                ('state', '!=', 'cancelled'),
+                ('end_datetime', '>', fields.Datetime.now()),
+            ]):
                 raise UserError(_(
                     'Asset %s has an upcoming booking. Cancel the bookings before approving maintenance.',
                     asset.asset_tag,

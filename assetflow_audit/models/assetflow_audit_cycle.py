@@ -157,6 +157,14 @@ class AssetflowAuditCycle(models.Model):
                 'audit_close', cycle, _('Audit %s closed', cycle.reference),
             )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            vals['state'] = 'draft'
+            vals.pop('closed_by', None)
+            vals.pop('closed_at', None)
+        return super().create(vals_list)
+
     def write(self, vals):
         if not self.env.context.get('allow_audit_write'):
             if {'state', 'closed_by', 'closed_at'} & set(vals):

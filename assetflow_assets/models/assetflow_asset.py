@@ -93,11 +93,20 @@ class AssetflowAsset(models.Model):
             )
             asset.history_count = len(asset.allocation_ids) + extra
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get('state', 'available') != 'available':
+                raise UserError(_('A new asset must start in the Available state.'))
+            if vals.get('holder_employee_id') or vals.get('expected_return_date'):
+                raise UserError(_('Allocate an asset through the allocation workflow.'))
+        return super().create(vals_list)
+
     def write(self, vals):
         if 'asset_tag' in vals:
             raise UserError(_('An asset tag is generated once and cannot be changed.'))
         if not self.env.context.get('allow_state_write') and {
-            'state', 'holder_employee_id', 'expected_return_date',
+            'state', 'holder_employee_id', 'expected_return_date', 'active',
         } & set(vals):
             raise UserError(_('Use the asset workflow actions to change lifecycle fields.'))
         return super().write(vals)
@@ -184,6 +193,12 @@ class AssetflowAsset(models.Model):
         if not allocation:
             raise UserError(_('Asset %s is not currently allocated.', self.asset_tag))
         self.lock_for_update()
+        self.invalidate_recordset(['state'])
+        if self.state != 'allocated':
+            raise UserError(_('Asset %s is no longer allocated.', self.asset_tag))
+        allocation = self._active_allocation()
+        if not allocation:
+            raise UserError(_('Asset %s has no active allocation to return.', self.asset_tag))
         allocation.with_context(allow_state_write=True).write({
             'state': 'returned',
             'return_datetime': fields.Datetime.now(),
@@ -231,6 +246,11 @@ class AssetflowAsset(models.Model):
                 asset.with_context(allow_state_write=True).write({'state': 'available'})
 
     def action_set_maintenance(self, reason=None):
+        if not (
+            self.env.user.has_group('assetflow_base.group_assetflow_asset_manager')
+            or self.env.user.has_group('assetflow_base.group_assetflow_admin')
+        ):
+            raise UserError(_('Only an Asset Manager or Administrator can move an asset into maintenance.'))
         self._transition('maintenance', ['available', 'allocated', 'reserved'],
                          note=reason or self.transition_reason, require_note=True)
 
@@ -264,7 +284,7 @@ class AssetflowAsset(models.Model):
 
     def action_archive(self):
         self._require_admin()
-        self.write({'active': False})
+        self.with_context(allow_state_write=True).write({'active': False})
 
     @api.ondelete(at_uninstall=False)
     def _unlink_if_no_history(self):

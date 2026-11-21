@@ -40,6 +40,12 @@ class AssetflowBooking(models.Model):
         asset_ids = {vals['asset_id'] for vals in vals_list if vals.get('asset_id')}
         assets = self.env['assetflow.asset'].browse(asset_ids)
         assets.lock_for_update()
+        for vals in vals_list:
+            # Workflow-owned fields are never accepted from the caller.
+            vals['state'] = 'upcoming'
+            vals['reminder_sent'] = False
+            vals.pop('cancelled_by', None)
+            vals.pop('cancel_reason', None)
         for asset in assets:
             if not asset.is_bookable:
                 raise ValidationError(_('Only a shared/bookable resource can be booked.'))
@@ -59,13 +65,23 @@ class AssetflowBooking(models.Model):
         return bookings
 
     def write(self, vals):
-        if not self.env.context.get('allow_state_write') and 'state' in vals:
+        allow_state = self.env.context.get('allow_state_write')
+        if not allow_state and {'employee_id', 'asset_id'} & set(vals):
+            if not self.env.user.has_group('assetflow_base.group_assetflow_asset_manager'):
+                raise UserError(_('Only an Asset Manager can change the booker or the resource.'))
+        if not allow_state and 'state' in vals:
             raise UserError(_('Use the booking actions or cron to change booking state.'))
         if {'asset_id', 'start_datetime', 'end_datetime'} & set(vals):
             asset_ids = set(self.mapped('asset_id').ids)
             if vals.get('asset_id'):
                 asset_ids.add(vals['asset_id'])
-            self.env['assetflow.asset'].browse(asset_ids).lock_for_update()
+            assets = self.env['assetflow.asset'].browse(asset_ids)
+            assets.lock_for_update()
+            for asset in assets:
+                if asset.state not in ('available', 'reserved'):
+                    raise ValidationError(_(
+                        'Asset %s is %s and cannot be booked.', asset.asset_tag, asset.state,
+                    ))
         return super().write(vals)
 
     @api.constrains('asset_id', 'start_datetime', 'end_datetime', 'state')
@@ -78,7 +94,7 @@ class AssetflowBooking(models.Model):
                 raise ValidationError(_('The end of a booking must be after its start.'))
             if booking.state == 'upcoming' and booking.end_datetime < now:
                 raise ValidationError(_('A booking cannot be created for a past time slot.'))
-            conflict = self.search([
+            conflict = self.sudo().search([
                 ('asset_id', '=', booking.asset_id.id),
                 ('id', '!=', booking.id),
                 ('state', '!=', 'cancelled'),
@@ -112,7 +128,7 @@ class AssetflowBooking(models.Model):
             if asset.state not in ('available', 'reserved'):
                 continue
             now = fields.Datetime.now()
-            current = self.search_count([
+            current = self.sudo().search_count([
                 ('asset_id', '=', asset.id), ('state', '=', 'ongoing'),
                 ('start_datetime', '<=', now), ('end_datetime', '>', now),
             ])
