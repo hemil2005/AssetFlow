@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_assetflow_dashboard" name="Dashboard"
+              parent="assetflow_base.menu_assetflow_root"
+              action="action_assetflow_dashboard" sequence="5"/>
+
+    <menuitem id="menu_assetflow_reports" name="Reports"
+              parent="assetflow_base.menu_assetflow_root" sequence="80"
+              groups="assetflow_base.group_assetflow_asset_manager,assetflow_base.group_assetflow_admin,assetflow_base.group_assetflow_department_head"/>
+
+    <menuitem id="menu_assetflow_report_utilization" name="Asset Utilization"
+              parent="menu_assetflow_reports" action="action_assetflow_report_utilization" sequence="10"/>
+
+    <menuitem id="menu_assetflow_report_maintenance" name="Maintenance Analysis"
+              parent="menu_assetflow_reports" action="action_assetflow_report_maintenance" sequence="20"/>
+
+    <menuitem id="menu_assetflow_report_bookings" name="Booking Load"
+              parent="menu_assetflow_reports" action="action_assetflow_report_bookings" sequence="30"/>
+
+    <menuitem id="menu_assetflow_report_retirement" name="Assets Due / Near Retirement"
+              parent="menu_assetflow_reports" action="action_assetflow_report_retirement" sequence="40"/>
+</odoo>

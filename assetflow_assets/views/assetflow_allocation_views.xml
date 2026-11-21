@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_assetflow_allocation_list" model="ir.ui.view">
+        <field name="name">assetflow.allocation.list</field>
+        <field name="model">assetflow.allocation</field>
+        <field name="arch" type="xml">
+            <list string="Allocations" decoration-danger="is_overdue">
+                <field name="asset_id" readonly="1"/>
+                <field name="employee_id"/>
+                <field name="department_id"/>
+                <field name="start_datetime"/>
+                <field name="expected_return_date"/>
+                <field name="is_overdue" invisible="1"/>
+                <field name="return_datetime"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_assetflow_allocation_form" model="ir.ui.view">
+        <field name="name">assetflow.allocation.form</field>
+        <field name="model">assetflow.allocation</field>
+        <field name="arch" type="xml">
+            <form string="Allocation">
+                <header>
+                    <button name="action_return" type="object" string="Mark Returned"
+                            invisible="state != 'active'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="active,returned" readonly="1"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="asset_id" readonly="1"/>
+                            <field name="employee_id" readonly="1"/>
+                            <field name="department_id" readonly="1"/>
+                            <field name="allocated_by" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="start_datetime" readonly="1"/>
+                            <field name="expected_return_date" readonly="1"/>
+                            <field name="return_datetime" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Return Check-in" invisible="state != 'active'">
+                        <field name="checkin_condition"/>
+                        <field name="checkin_notes"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="note" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_assetflow_allocation" model="ir.actions.act_window">
+        <field name="name">Allocation History</field>
+        <field name="res_model">assetflow.allocation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

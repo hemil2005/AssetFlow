@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_department_allocation">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Department Allocation Summary</h2>
+                        <h3 t-field="doc.name"/>
+                        <p>
+                            <strong>Members:</strong> <span t-out="doc.member_count"/>
+                        </p>
+                        <t t-set="assets" t-value="doc.report_asset_rows()"/>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Asset</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>State</th>
+                                    <th>Holder</th>
+                                    <th>Expected return</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="assets" t-as="asset">
+                                    <td t-out="asset.asset_tag"/>
+                                    <td t-out="asset.name"/>
+                                    <td t-out="asset.category_id.name"/>
+                                    <td t-out="asset.state"/>
+                                    <td t-out="asset.holder_employee_id.name"/>
+                                    <td t-out="asset.expected_return_date"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p t-if="not assets" class="text-muted">No assets in this department.</p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

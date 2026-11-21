@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_assetflow_maintenance_request_list" model="ir.ui.view">
+        <field name="name">assetflow.maintenance.request.list</field>
+        <field name="model">assetflow.maintenance.request</field>
+        <field name="arch" type="xml">
+            <list string="Maintenance Requests" decoration-danger="state == 'rejected'"
+                  decoration-muted="state == 'resolved'">
+                <field name="reference"/>
+                <field name="name"/>
+                <field name="asset_id"/>
+                <field name="raised_by_id"/>
+                <field name="priority" widget="badge"/>
+                <field name="technician_id" optional="show"/>
+                <field name="state" widget="badge"/>
+                <field name="create_date" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_assetflow_maintenance_request_kanban" model="ir.ui.view">
+        <field name="name">assetflow.maintenance.request.kanban</field>
+        <field name="model">assetflow.maintenance.request</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column" quick_create="false">
+                <field name="reference"/>
+                <field name="name"/>
+                <field name="asset_id"/>
+                <field name="raised_by_id"/>
+                <field name="priority"/>
+                <field name="technician_id"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="priority" widget="badge"/>
+                        <div class="fw-bold">
+                            <field name="reference"/> — <field name="name"/>
+                        </div>
+                        <div class="text-muted">
+                            <field name="asset_id"/>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span><field name="raised_by_id"/></span>
+                            <span><field name="technician_id"/></span>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_assetflow_maintenance_request_form" model="ir.ui.view">
+        <field name="name">assetflow.maintenance.request.form</field>
+        <field name="model">assetflow.maintenance.request</field>
+        <field name="arch" type="xml">
+            <form string="Maintenance Request">
+                <header>
+                    <button name="action_approve" type="object" string="Approve" class="btn-primary"
+                            invisible="state != 'pending'"
+                            groups="assetflow_base.group_assetflow_asset_manager"/>
+                    <button name="action_reject" type="object" string="Reject"
+                            invisible="state != 'pending'"
+                            groups="assetflow_base.group_assetflow_asset_manager"/>
+                    <button name="action_assign" type="object" string="Assign Technician" class="btn-primary"
+                            invisible="state != 'approved'"
+                            groups="assetflow_base.group_assetflow_asset_manager"/>
+                    <button name="action_start" type="object" string="Start Work" class="btn-primary"
+                            invisible="state != 'assigned'"/>
+                    <button name="action_resolve" type="object" string="Resolve" class="btn-primary"
+                            invisible="state != 'in_progress'"/>
+                    <button name="action_archive" type="object" string="Archive"
+                            invisible="not active"
+                            groups="assetflow_base.group_assetflow_asset_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="pending,approved,assigned,in_progress,resolved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Short subject"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="reference" readonly="1"/>
+                            <field name="asset_id" readonly="state != 'pending'"/>
+                            <field name="raised_by_id" readonly="1"/>
+                            <field name="priority" readonly="state in ('resolved', 'rejected')"/>
+                        </group>
+                        <group>
+                            <field name="technician_id" readonly="state != 'approved'"/>
+                            <field name="approved_by" readonly="1" invisible="not approved_by"/>
+                            <field name="approved_at" readonly="1" invisible="not approved_at"/>
+                            <field name="previous_asset_state" readonly="1"
+                                   groups="assetflow_base.group_assetflow_asset_manager" invisible="not previous_asset_state"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Issue">
+                        <field name="description" nolabel="1" readonly="state != 'pending'"/>
+                        <field name="photo" widget="image" nolabel="1"/>
+                    </group>
+                    <group string="Rejection" invisible="state != 'rejected'">
+                        <field name="rejection_reason" nolabel="1" readonly="1"/>
+                    </group>
+                    <group string="Resolution" invisible="state not in ('in_progress', 'resolved')">
+                        <field name="resolution_notes" nolabel="1" readonly="state == 'resolved'"/>
+                        <field name="resolved_at" readonly="1" invisible="not resolved_at"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_assetflow_maintenance_request_search" model="ir.ui.view">
+        <field name="name">assetflow.maintenance.request.search</field>
+        <field name="model">assetflow.maintenance.request</field>
+        <field name="arch" type="xml">
+            <search string="Search Maintenance Requests">
+                <field name="name"/>
+                <field name="reference"/>
+                <field name="asset_id"/>
+                <field name="raised_by_id"/>
+                <field name="technician_id"/>
+                <filter string="Open" name="open"
+                        domain="[('state', 'in', ['pending', 'approved', 'assigned', 'in_progress'])]"/>
+                <filter string="Pending" name="pending" domain="[('state', '=', 'pending')]"/>
+                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Assigned" name="assigned" domain="[('state', '=', 'assigned')]"/>
+                <filter string="In Progress" name="in_progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter string="Resolved" name="resolved" domain="[('state', '=', 'resolved')]"/>
+                <filter string="Rejected" name="rejected" domain="[('state', '=', 'rejected')]"/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="Critical" name="critical" domain="[('priority', '=', 'critical')]"/>
+                <filter string="My Requests" name="my_requests"
+                        domain="[('raised_by_id.user_id', '=', uid)]"/>
+                <filter string="Assigned To Me" name="assigned_to_me"
+                        domain="[('technician_id.user_id', '=', uid)]"/>
+                <group>
+                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Priority" name="group_by_priority" context="{'group_by': 'priority'}"/>
+                    <filter string="Technician" name="group_by_technician" context="{'group_by': 'technician_id'}"/>
+                    <filter string="Raised By" name="group_by_raiser" context="{'group_by': 'raised_by_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_assetflow_maintenance_request" model="ir.actions.act_window">
+        <field name="name">Maintenance Requests</field>
+        <field name="res_model">assetflow.maintenance.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_assetflow_maintenance_request_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Raise a maintenance request</p>
+            <p>Employees request a repair for an asset they hold. An Asset Manager approves or
+               rejects it before a technician is assigned.</p>
+        </field>
+    </record>
+</odoo>

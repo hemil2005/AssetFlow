@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_assetflow_activity_log_list" model="ir.ui.view">
+        <field name="name">assetflow.activity.log.list</field>
+        <field name="model">assetflow.activity.log</field>
+        <field name="arch" type="xml">
+            <list string="Activity Logs">
+                <field name="timestamp"/>
+                <field name="user_id"/>
+                <field name="action"/>
+                <field name="model_name"/>
+                <field name="res_id"/>
+                <field name="description"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_assetflow_activity_log" model="ir.actions.act_window">
+        <field name="name">Activity Logs</field>
+        <field name="res_model">assetflow.activity.log</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

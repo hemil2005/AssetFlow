@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_assetflow_maintenance_admin,assetflow.maintenance.request administrator,model_assetflow_maintenance_request,assetflow_base.group_assetflow_admin,1,1,1,0
+access_assetflow_maintenance_manager,assetflow.maintenance.request manager,model_assetflow_maintenance_request,assetflow_base.group_assetflow_asset_manager,1,1,1,0
+access_assetflow_maintenance_head,assetflow.maintenance.request department head,model_assetflow_maintenance_request,assetflow_base.group_assetflow_department_head,1,1,1,0
+access_assetflow_maintenance_employee,assetflow.maintenance.request employee,model_assetflow_maintenance_request,assetflow_base.group_assetflow_employee,1,1,1,0

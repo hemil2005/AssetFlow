@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_department_allocation" model="ir.actions.report">
+        <field name="name">Department Allocation Summary</field>
+        <field name="model">assetflow.department</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">assetflow_reports.report_department_allocation</field>
+        <field name="report_file">assetflow_reports.report_department_allocation</field>
+        <field name="binding_model_id" ref="assetflow_base.model_assetflow_department"/>
+        <field name="binding_type">report</field>
+        <field name="group_ids" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager'))]"/>
+    </record>
+</odoo>

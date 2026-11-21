@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="assetflow_asset_employee_rule" model="ir.rule">
+        <field name="name">AssetFlow: employees see held or bookable assets</field>
+        <field name="model_id" ref="model_assetflow_asset"/>
+        <field name="domain_force">['|', ('holder_employee_id.user_id', '=', user.id), ('is_bookable', '=', True)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <record id="assetflow_asset_head_rule" model="ir.rule">
+        <field name="name">AssetFlow: heads see their department assets</field>
+        <field name="model_id" ref="model_assetflow_asset"/>
+        <field name="domain_force">[('department_id', '=', user.employee_id.department_id.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_department_head'))]"/>
+    </record>
+
+    <record id="assetflow_asset_manager_rule" model="ir.rule">
+        <field name="name">AssetFlow: managers see all assets</field>
+        <field name="model_id" ref="model_assetflow_asset"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager'))]"/>
+    </record>
+
+    <record id="assetflow_asset_admin_rule" model="ir.rule">
+        <field name="name">AssetFlow: administrators see all assets</field>
+        <field name="model_id" ref="model_assetflow_asset"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_admin'))]"/>
+    </record>
+
+    <record id="assetflow_allocation_employee_rule" model="ir.rule">
+        <field name="name">AssetFlow: employees see their own allocations</field>
+        <field name="model_id" ref="model_assetflow_allocation"/>
+        <field name="domain_force">[('employee_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <record id="assetflow_allocation_head_rule" model="ir.rule">
+        <field name="name">AssetFlow: heads see department allocations</field>
+        <field name="model_id" ref="model_assetflow_allocation"/>
+        <field name="domain_force">[('department_id', '=', user.employee_id.department_id.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_department_head'))]"/>
+    </record>
+
+    <record id="assetflow_allocation_manager_rule" model="ir.rule">
+        <field name="name">AssetFlow: managers see all allocations</field>
+        <field name="model_id" ref="model_assetflow_allocation"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager'))]"/>
+    </record>
+
+    <record id="assetflow_allocation_admin_rule" model="ir.rule">
+        <field name="name">AssetFlow: administrators see all allocations</field>
+        <field name="model_id" ref="model_assetflow_allocation"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_admin'))]"/>
+    </record>
+
+    <record id="assetflow_transfer_employee_rule" model="ir.rule">
+        <field name="name">AssetFlow: employees see their own transfers</field>
+        <field name="model_id" ref="model_assetflow_transfer"/>
+        <field name="domain_force">[('requested_by', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <record id="assetflow_transfer_head_rule" model="ir.rule">
+        <field name="name">AssetFlow: heads see department transfers</field>
+        <field name="model_id" ref="model_assetflow_transfer"/>
+        <field name="domain_force">[('asset_id.department_id', '=', user.employee_id.department_id.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_department_head'))]"/>
+    </record>
+
+    <record id="assetflow_transfer_manager_rule" model="ir.rule">
+        <field name="name">AssetFlow: managers see all transfers</field>
+        <field name="model_id" ref="model_assetflow_transfer"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager'))]"/>
+    </record>
+
+    <record id="assetflow_transfer_admin_rule" model="ir.rule">
+        <field name="name">AssetFlow: administrators see all transfers</field>
+        <field name="model_id" ref="model_assetflow_transfer"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_admin'))]"/>
+    </record>
+</odoo>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+      Employees write their own requests so the assigned technician, who is an ordinary
+      employee, can run the start/resolve actions. Decision fields and state are protected
+      by the model write guard, and record rules scope rows to the raiser or technician.
+    -->
+    <record id="assetflow_maintenance_employee_rule" model="ir.rule">
+        <field name="name">Maintenance: employees see requests they raised or repair</field>
+        <field name="model_id" ref="model_assetflow_maintenance_request"/>
+        <field name="domain_force">['|', ('raised_by_id.user_id', '=', user.id), ('technician_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_employee'))]"/>
+    </record>
+
+    <record id="assetflow_maintenance_head_rule" model="ir.rule">
+        <field name="name">Maintenance: heads see their department requests</field>
+        <field name="model_id" ref="model_assetflow_maintenance_request"/>
+        <field name="domain_force">[('asset_id.department_id', '=', user.employee_id.department_id.id)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_department_head'))]"/>
+    </record>
+
+    <record id="assetflow_maintenance_manager_rule" model="ir.rule">
+        <field name="name">Maintenance: managers see all requests</field>
+        <field name="model_id" ref="model_assetflow_maintenance_request"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_asset_manager'))]"/>
+    </record>
+
+    <record id="assetflow_maintenance_admin_rule" model="ir.rule">
+        <field name="name">Maintenance: administrators see all requests</field>
+        <field name="model_id" ref="model_assetflow_maintenance_request"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('assetflow_base.group_assetflow_admin'))]"/>
+    </record>
+</odoo>

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_assetflow_asset_graph" model="ir.ui.view">
+        <field name="name">assetflow.asset.graph</field>
+        <field name="model">assetflow.asset</field>
+        <field name="arch" type="xml">
+            <graph string="Asset Utilization" type="bar">
+                <field name="category_id" type="row"/>
+                <field name="department_id" type="col"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_assetflow_asset_pivot" model="ir.ui.view">
+        <field name="name">assetflow.asset.pivot</field>
+        <field name="model">assetflow.asset</field>
+        <field name="arch" type="xml">
+            <pivot string="Asset Utilization">
+                <field name="category_id" type="row"/>
+                <field name="department_id" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_assetflow_maintenance_graph" model="ir.ui.view">
+        <field name="name">assetflow.maintenance.request.graph</field>
+        <field name="model">assetflow.maintenance.request</field>
+        <field name="arch" type="xml">
+            <graph string="Maintenance Frequency" type="bar">
+                <field name="asset_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_assetflow_maintenance_pivot" model="ir.ui.view">
+        <field name="name">assetflow.maintenance.request.pivot</field>
+        <field name="model">assetflow.maintenance.request</field>
+        <field name="arch" type="xml">
+            <pivot string="Maintenance Frequency">
+                <field name="asset_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_assetflow_booking_graph" model="ir.ui.view">
+        <field name="name">assetflow.booking.graph</field>
+        <field name="model">assetflow.booking</field>
+        <field name="arch" type="xml">
+            <graph string="Booking Load" type="bar">
+                <field name="asset_id" type="row"/>
+                <field name="state" type="col"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_assetflow_booking_pivot" model="ir.ui.view">
+        <field name="name">assetflow.booking.pivot</field>
+        <field name="model">assetflow.booking</field>
+        <field name="arch" type="xml">
+            <pivot string="Booking Load (pivot fallback)">
+                <field name="asset_id" type="row"/>
+                <field name="start_datetime" type="col" interval="day"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_assetflow_asset_retirement_search" model="ir.ui.view">
+        <field name="name">assetflow.asset.retirement.search</field>
+        <field name="model">assetflow.asset</field>
+        <field name="arch" type="xml">
+            <search string="Assets Due / Near Retirement">
+                <field name="name"/>
+                <field name="asset_tag"/>
+                <field name="category_id"/>
+                <field name="department_id"/>
+                <filter string="Near retirement (5 years)" name="near_retirement"
+                        domain="[('is_near_retirement', '=', True)]"/>
+                <filter string="Under maintenance" name="under_maintenance"
+                        domain="[('state', '=', 'maintenance')]"/>
+                <filter string="Disposed" name="disposed" domain="[('state', '=', 'disposed')]"/>
+                <group>
+                    <filter string="Category" name="group_category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Department" name="group_department" context="{'group_by': 'department_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_assetflow_asset_retirement_list" model="ir.ui.view">
+        <field name="name">assetflow.asset.retirement.list</field>
+        <field name="model">assetflow.asset</field>
+        <field name="arch" type="xml">
+            <list string="Assets Due / Near Retirement" create="false">
+                <field name="asset_tag"/>
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="department_id"/>
+                <field name="acquisition_date"/>
+                <field name="state" widget="badge"/>
+                <field name="is_near_retirement"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_assetflow_report_retirement" model="ir.actions.act_window">
+        <field name="name">Assets Due / Near Retirement</field>
+        <field name="res_model">assetflow.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_assetflow_asset_retirement_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_assetflow_asset_retirement_list')})]"/>
+        <field name="context">{'search_default_near_retirement': 1}</field>
+    </record>
+
+    <record id="action_assetflow_report_utilization" model="ir.actions.act_window">
+        <field name="name">Asset Utilization</field>
+        <field name="res_model">assetflow.asset</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('view_assetflow_asset_graph')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_assetflow_asset_pivot')})]"/>
+    </record>
+
+    <record id="action_assetflow_report_maintenance" model="ir.actions.act_window">
+        <field name="name">Maintenance Analysis</field>
+        <field name="res_model">assetflow.maintenance.request</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('view_assetflow_maintenance_graph')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_assetflow_maintenance_pivot')})]"/>
+    </record>
+
+    <record id="action_assetflow_report_bookings" model="ir.actions.act_window">
+        <field name="name">Booking Load</field>
+        <field name="res_model">assetflow.booking</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('view_assetflow_booking_graph')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_assetflow_booking_pivot')})]"/>
+    </record>
+
+    <record id="action_assetflow_dashboard" model="ir.actions.client">
+        <field name="name">Dashboard</field>
+        <field name="tag">assetflow_reports.dashboard</field>
+    </record>
+</odoo>

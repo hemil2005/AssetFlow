@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_assetflow_asset_tag" model="ir.sequence">
+            <field name="name">AssetFlow Asset Tag</field>
+            <field name="code">assetflow.asset.tag</field>
+            <field name="prefix">AF-</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <record id="seq_assetflow_maintenance_ref" model="ir.sequence">
+            <field name="name">AssetFlow Maintenance Reference</field>
+            <field name="code">assetflow.maintenance.ref</field>
+            <field name="prefix">MR-</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <record id="seq_assetflow_audit_ref" model="ir.sequence">
+            <field name="name">AssetFlow Audit Reference</field>
+            <field name="code">assetflow.audit.ref</field>
+            <field name="prefix">AUD-</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>
