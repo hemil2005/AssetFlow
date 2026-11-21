@@ -194,14 +194,14 @@ class AssetflowMaintenanceRequest(models.Model):
                 raise UserError(_('Only a pending request can be approved.'))
             asset = request.asset_id
             asset.lock_for_update()
-            if asset.state == 'reserved':
-                raise UserError(_(
-                    'Asset %s has an upcoming booking. Cancel the bookings before approving maintenance.',
-                    asset.asset_tag,
-                ))
             if asset._has_current_booking():
                 raise UserError(_(
                     'Asset %s is booked right now. Cancel or finish the booking before approving maintenance.',
+                    asset.asset_tag,
+                ))
+            if asset.state == 'reserved':
+                raise UserError(_(
+                    'Asset %s has an upcoming booking. Cancel the bookings before approving maintenance.',
                     asset.asset_tag,
                 ))
             if asset.state not in ('available', 'allocated'):

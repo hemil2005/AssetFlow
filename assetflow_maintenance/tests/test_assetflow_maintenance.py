@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase, new_test_user
 from odoo.tools import mute_logger
@@ -232,12 +233,18 @@ class TestAssetflowMaintenance(TransactionCase):
     def test_booking_conflict_blocks_approval(self):
         if not self.env['ir.model'].sudo().search_count([('model', '=', 'assetflow.booking')]):
             self.skipTest('assetflow_booking is not installed on this branch')
-        request = self._raise()
-        now = self.env['assetflow.booking']._fields['start_datetime'].now()
+        # A shared resource with an ongoing booking: booking create sets it ongoing and
+        # reserves the asset, and maintenance approval must refuse while it runs.
+        asset = self._create_asset('Meeting room B2', 'AF-9005')
+        asset.is_bookable = True
+        request = self._raise(asset=asset, user=self.manager_user)
+        now = fields.Datetime.now()
         self.env['assetflow.booking'].create({
-            'asset_id': self.asset.id,
+            'asset_id': asset.id,
+            'employee_id': self.employee.id,
             'start_datetime': now,
             'end_datetime': now + timedelta(hours=1),
         })
         with self.assertRaises(UserError):
             request.with_user(self.manager_user).action_approve()
+        self.assertEqual(asset.state, 'reserved')
