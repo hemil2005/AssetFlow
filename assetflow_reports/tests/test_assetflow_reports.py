@@ -88,6 +88,7 @@ class TestAssetflowReports(TransactionCase):
         self.assertEqual(recent['recent_upcoming'][0]['asset_tag'], 'AF-REP-2')
         self.assertEqual(recent['recent_overdue'], [])
         self.assertIn('recent_log', recent)
+        self.assertTrue(recent['recent_log'])
         self.assertTrue(recent['can_manage_assets'])
 
     def test_dashboard_respects_record_rules(self):
