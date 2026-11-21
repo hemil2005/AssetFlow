@@ -90,16 +90,26 @@ Fallback (implemented): `scripts/seed_demo.py` run through `odoo shell` on a fre
 six addons installed. It creates the users, organisation, nine assets and all the demo records in
 §1–§4, then prints and asserts the §5 KPI values.
 
+Docker (preferred; run from the repository root):
+
 ```powershell
 $env:ASSETFLOW_DEMO_PASSWORD = "AssetFlow!2026"   # local demo value; not committed
-Get-Content scripts/seed_demo.py | .venv\Scripts\python.exe `
-  C:\Users\daksh\.local\odoo-19-src\odoo-bin shell `
-  -d assetflow_demo --addons-path="C:\Users\daksh\.local\odoo-19-src\addons,E:\Coding\Projects\AssetFlow" `
-  --db_host=127.0.0.1 --db_port=5433 --db_user=odoo --db_password=<local> --no-http
+Get-Content scripts/seed_demo.py | docker compose exec -T odoo /entrypoint.sh odoo shell -d assetflow_demo --no-http
+```
+
+Source-install example (adjust paths to your machine; run from the repository root):
+
+```powershell
+$env:ASSETFLOW_DEMO_PASSWORD = "AssetFlow!2026"
+Get-Content scripts/seed_demo.py | python <odoo-src>/odoo-bin shell -d assetflow_demo `
+  --addons-path="<odoo-src>/addons,." --db_host=127.0.0.1 --db_port=5433 `
+  --db_user=odoo --db_password=<local> --no-http
 ```
 
 The password comes from `ASSETFLOW_DEMO_PASSWORD` and defaults to `AssetFlow!2026`; set it in the
-shell before running, never in git. Dates are relative to `fields.Date.today()`.
+shell before running, never in git. Dates are relative to `fields.Date.today()`. The script commits
+explicitly because `odoo shell` rolls back when it exits, and it authenticates as `maya.manager`
+to prove the password works.
 
 **Overdue representation:** a past `expected_return_date` is valid, not an error. R6 defines an
 overdue allocation as `expected_return_date < today`, so both the asset and allocation past-date

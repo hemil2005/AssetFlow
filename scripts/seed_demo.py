@@ -52,9 +52,12 @@ for login, name, email, role in user_specs:
         'name': name,
         'login': login,
         'email': email,
-        'password': password,
         'group_ids': [(6, 0, [base_user_group.id, groups['employee'].id, groups[role].id])],
     })
+    # Odoo 19: `password` is a computed field with the hashing inverse
+    # `_set_password`; assigning it after create stores a real hash. Passing
+    # `new_password` in create vals leaves plaintext and breaks login.
+    user.password = password
     users[login] = user
     employees[login] = env['assetflow.employee'].create({
         'name': name,
@@ -134,6 +137,7 @@ env['assetflow.maintenance.request'].with_user(maya).create({
 env['assetflow.transfer'].with_user(users['priya.employee']).create({
     'asset_id': assets['AF-0001'].id,
     'to_employee_id': employees['raj.employee'].id,
+    'expected_return_date': today + timedelta(days=5),
     'reason': 'Raj needs the laptop for a client visit.',
 })
 
@@ -168,7 +172,17 @@ expected = {
 for key, value in expected.items():
     assert kpis[key] == value, f'{key}: expected {value}, got {kpis[key]}'
 
+# Prove the demo accounts can actually log in. The KPI block alone is not enough.
+auth_info = env['res.users'].authenticate(
+    {'type': 'password', 'login': 'maya.manager', 'password': password}, {'interactive': True},
+)
+assert auth_info.get('uid') == users['maya.manager'].id, f'login failed: {auth_info}'
+print(f'maya.manager login: OK (uid={auth_info["uid"]})')
+
 print('=== AssetFlow demo KPIs ===')
 for key in (*expected, 'unread_notifications'):
     print(f'{key}: {kpis[key]}')
 print('=== demo seed complete ===')
+
+# `odoo shell` rolls back on exit; the seed must persist explicitly.
+env.cr.commit()
