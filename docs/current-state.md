@@ -12,7 +12,7 @@ agent may have landed work.
 | Branch | `main`, tracking `origin/main` |
 | HEAD | `455b7b8 docs: implementation contracts...` |
 | Working tree | clean on `main`; addon work is on feature branches |
-| Other branches | `feat/assetflow-base` @ `0b3e05a`, `feat/assetflow-booking` @ `b04646a` (both changes requested) |
+| Other branches | `feat/assetflow-base` @ `5c831a5`, `feat/assetflow-booking` @ `55025a4` (second review, B8/B10 open) |
 
 Commit history:
 

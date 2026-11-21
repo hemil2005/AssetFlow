@@ -38,10 +38,10 @@ addons. Phase 6 starts only when the models it aggregates are stable.
 | Phase | Status | Branch / note |
 |-------|--------|---------------|
 | 0 | done (harness merged) | docs + `.gitignore` + compose/test runner on main (`2440d94`) |
-| 1 | changes requested | `feat/assetflow-base` @ `0b3e05a`; blockers B1-B9 |
-| 2 | changes requested | same branch; blockers B1-B10 |
-| 3 | changes requested | `feat/assetflow-booking` @ `b04646a`; B10 + M13 |
-| 4 | queued | patient-wallaby after the base gate |
+| 1 | second review, B8/B10 open | `feat/assetflow-base` @ `5c831a5` |
+| 2 | second review, B8/B10 open | same branch |
+| 3 | second review, B10 open | `feat/assetflow-booking` @ `55025a4` |
+| 4 | started | patient-wallaby, based on `5c831a5` |
 | 5 | contract ready | `docs/spec/audit-implementation.md` |
 | 6 | contract ready | `docs/spec/reports-implementation.md` |
 | 7 | not started | needs a stable demo and the harness |

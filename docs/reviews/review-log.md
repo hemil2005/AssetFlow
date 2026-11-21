@@ -15,15 +15,15 @@ Severity:
 | Workstream | Owner | State | Branch | Review |
 |------------|-------|-------|--------|--------|
 | Docs: research, spec, plan, instructions, ADRs | northern-envelope | complete, in review by team | local `docs/` | self-checked |
-| `assetflow_base` scaffold | flat-orchid | reviewed, changes requested | `feat/assetflow-base` @ `0b3e05a` | B1-B9 open |
-| `assetflow_assets` | flat-orchid | reviewed, changes requested | `feat/assetflow-base` @ `0b3e05a` | B1-B10 open |
-| `assetflow_booking` | flat-orchid | reviewed, changes requested | `feat/assetflow-booking` @ `b04646a` | B10, M13 open |
-| `assetflow_maintenance` | patient-wallaby | queued after env harness + base gate | — | — |
+| `assetflow_base` scaffold | flat-orchid | second review, B8/B10 open | `feat/assetflow-base` @ `5c831a5` | [second review](2026-11-21-second-review.md) |
+| `assetflow_assets` | flat-orchid | second review, B8/B10 open | `feat/assetflow-base` @ `5c831a5` | [second review](2026-11-21-second-review.md) |
+| `assetflow_booking` | flat-orchid | second review, B10 open | `feat/assetflow-booking` @ `55025a4` | [second review](2026-11-21-second-review.md) |
+| `assetflow_maintenance` | patient-wallaby | started, based on `5c831a5` | `feat/assetflow-maintenance` (local) | pending |
 | `assetflow_audit` | northern-envelope (proposed) | not started | — | — |
 | `assetflow_reports` | northern-envelope (proposed) | not started | — | — |
 | Environment / Docker | patient-wallaby | merged `2440d94` | main | approved |
 | Verification harness | patient-wallaby | merged `2440d94` | main | approved |
-| Gate verification (independent) | cruising-barbet | ready, waiting for the next push | temp worktree per SHA | evidence only |
+| Gate verification (independent) | cruising-barbet | evidence on `0e1ad9c`: 17 tests pass, B1 then failed; re-running on `55025a4` | temp worktree per SHA | evidence only |
 
 ## Review protocol
 
@@ -40,30 +40,33 @@ Severity:
 
 ## Finding log
 
-_First review completed 2026-11-21 against `feat/assetflow-base` and `feat/assetflow-booking`:
-[`2026-11-21-base-assets-booking.md`](2026-11-21-base-assets-booking.md)._
+_First review: [`2026-11-21-base-assets-booking.md`](2026-11-21-base-assets-booking.md).
+Second review of `5c831a5` / `55025a4`: [`2026-11-21-second-review.md`](2026-11-21-second-review.md)._
 
 | ID | Severity | Area | Finding | Owner | State |
 |----|----------|------|---------|-------|-------|
-| B1 | H | hygiene | committed `__pycache__` / `.pyc` (15 base/assets, 21 booking) | flat-orchid | open |
-| B2 | H | security | no allocation/transfer record rules; every internal user can read/edit transfers | flat-orchid | open |
-| B3 | H | security | `base.group_user` read on all `hr.employee`; private HR data exposed; ADR-0002 divergence | flat-orchid | open |
-| B4 | H | spec | signup missing (`auth_signup` not implemented) | flat-orchid | open |
-| B5 | H | spec | department model/screen missing (Screen 3A) | flat-orchid | open |
-| B6 | H | spec | role promotion UI missing (Screen 3C, R2) | flat-orchid | open |
-| B7 | H | lifecycle | `_set_state` has no transition guards; destructive actions manager-only, no reason | flat-orchid | open |
-| B8 | H | integrity | direct allocation create/edit bypasses asset state; transfer allocates unallocated asset | flat-orchid | open |
-| B9 | H | spec | return flow has no required condition/notes | flat-orchid | open |
-| B10 | H | booking | non-bookable/lost assets bookable; state writable; reserve only via cron; no allocation/maintenance conflict | flat-orchid | open |
-| M1-M16 | M | mixed | field drift, category code, notifications/log, unlink, transfer states, head RBAC, noupdate, chatter, allocation UI, tests, TZ test, private call, `size`, reminders | flat-orchid | open |
+| B1 | H | hygiene | committed `__pycache__` / `.pyc` | flat-orchid | **closed** at `5c831a5` (0 tracked) |
+| B2 | H | security | allocation/transfer rules missing; transfer ACL write | flat-orchid | **partial**: rules/ACL fixed; transfer-create guard + behavioral RPC tests open |
+| B3 | H | security | `hr.employee` privacy / ADR-0002 | flat-orchid | **closed**: custom employee/department |
+| B4 | H | spec | signup missing | flat-orchid | **closed structurally** (test green) |
+| B5 | H | spec | department model/screen missing | flat-orchid | **closed structurally** |
+| B6 | H | spec | role promotion UI missing | flat-orchid | **closed structurally** |
+| B7 | H | lifecycle | unguarded transitions/destructive actions | flat-orchid | **structurally fixed**; scenario tests pending |
+| B8 | H | integrity | allocation edit/department sync; unallocated transfer; employee transfer target | flat-orchid | **open** |
+| B9 | H | spec | return condition/notes | flat-orchid | **closed** |
+| B10 | H | booking | immediate reserve; reminder crash without login | flat-orchid | **open** |
+| M7 | M | security | booking rules `noupdate="1"` | flat-orchid | **open** |
+| M3 | M | UI | notifications/activity log models exist; Screen 10 UI minimal | flat-orchid | deferred with reason |
+| M1/M2/M4/M5/M6/M8/M11/M13-M16 | M | mixed | field alignment, category code, archive, transfer states, head approvals, chatter, tests, TZ, private calls | flat-orchid | mostly fixed in the diff; verify in tests |
 
 ## Delegation requests
 
 | To | Task | Why | Due |
 |----|------|-----|-----|
-| flat-orchid | fix B1-B9 on `feat/assetflow-base` and B10/M13 on `feat/assetflow-booking`, then push both | gate is blocked on security and data integrity | next push |
+| flat-orchid | fix the remaining B8/B10 items and M7 on the current branches, then push | gate is blocked on booking timing and allocation/transfer integrity | next push |
 | flat-orchid | reply with any blocker you dispute, with the reason and the spec/ADR you want changed | disagreements are resolved before code, not after | next push |
-| flat-orchid | do not start `assetflow_maintenance` until base/assets/booking pass the gate | later addons depend on stable asset/employee models | after gate |
+| patient-wallaby | `assetflow_maintenance` is started on `feat/assetflow-maintenance`, based on `5c831a5` | maintenance is unblocked while the base gate closes | next push |
+| cruising-barbet | re-run combined evidence on `55025a4` including the targeted employee/booking/allocation/reminder cases | closes the behavioral evidence gap | this push |
 | northern-envelope | re-review both branches within one turn of the next push and update this log | keep the loop short | next push |
 | pleasing-dumpling | **withdrawn** — session is out of scope by the repo owner's decision; no files may be written | assignment reclaimed by northern-envelope | — |
 | northern-envelope | harness reclaimed from pleasing-dumpling, then handed to patient-wallaby | keep ownership explicit | done |
