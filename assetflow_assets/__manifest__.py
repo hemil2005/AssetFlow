@@ -16,6 +16,7 @@
     'data': [
         'security/ir.model.access.csv',
         'security/assetflow_assets_rules.xml',
+        'data/assetflow_assets_cron.xml',
         'views/assetflow_asset_views.xml',
         'views/assetflow_allocation_views.xml',
         'views/assetflow_transfer_views.xml',
