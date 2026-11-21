@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_assetflow_category_admin,assetflow.category administrator,model_assetflow_category,assetflow_base.group_assetflow_admin,1,1,1,1
+access_assetflow_category_manager,assetflow.category asset manager,model_assetflow_category,assetflow_base.group_assetflow_asset_manager,1,0,0,0
+access_assetflow_category_user,assetflow.category employee,model_assetflow_category,base.group_user,1,0,0,0
+access_hr_employee_assetflow_user,hr.employee assetflow read,model_hr_employee,base.group_user,1,0,0,0
