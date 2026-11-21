@@ -89,7 +89,12 @@
                     </div>
 
                     <div class="af-panel">
-                        <h3>Notifications</h3>
+                        <h3 class="af-panel-heading">
+                            Notifications
+                            <button t-if="state.data.unread_notifications"
+                                    class="btn btn-sm btn-link"
+                                    t-on-click="markAllRead">Mark all read</button>
+                        </h3>
                         <ul class="af-notifications" t-if="state.data.recent_notifications.length">
                             <li t-foreach="state.data.recent_notifications" t-as="notification" t-key="notification.id">
                                 <strong t-out="notification.title"/>
@@ -97,6 +102,18 @@
                             </li>
                         </ul>
                         <p t-else="" class="text-muted">Nothing unread.</p>
+                    </div>
+
+                    <div class="af-panel">
+                        <h3>Recent activity</h3>
+                        <ul class="af-notifications" t-if="state.data.recent_log.length">
+                            <li t-foreach="state.data.recent_log" t-as="entry" t-key="entry.id">
+                                <strong t-out="entry.action"/>
+                                <div class="text-muted" t-out="entry.description"/>
+                                <small class="text-muted" t-out="entry.when"/>
+                            </li>
+                        </ul>
+                        <p t-else="" class="text-muted">No recent activity.</p>
                     </div>
                 </div>
 

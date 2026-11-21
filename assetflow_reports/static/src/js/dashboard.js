@@ -39,6 +39,11 @@ export class AssetflowDashboard extends Component {
         return `background-color: rgba(113, 75, 103, ${(0.12 + ratio * 0.7).toFixed(2)});`;
     }
 
+    async markAllRead() {
+        await this.orm.call("assetflow.notification", "action_mark_all_read", []);
+        await this.load();
+    }
+
     openAsset(assetId) {
         return this.action.doAction({
             type: "ir.actions.act_window",
