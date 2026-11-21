@@ -13,7 +13,7 @@ multi-company and external messaging are explicitly out of scope.
 
 ## Status
 
-**v0.1.0 — feature complete for the brief, demo-ready.** All six addons are on `main`, CI runs the
+**v0.2.0 - feature complete for the brief, demo-ready.** All six addons are on `main`, CI runs the
 full install + test suite, and the demo seed/narrative are scripted. Current verification:
 
 - **92 tests, 0 failed** across the six addons on a fresh Odoo 19 + PostgreSQL 16 database.
@@ -92,6 +92,7 @@ Start at [`docs/README.md`](docs/README.md):
 - [`docs/spec/demo-data.md`](docs/spec/demo-data.md) — demo dataset and narrative
 - [`docs/instructions/`](docs/instructions/) — coding rules, build plan, verification, demo runbook
 - [`docs/reviews/`](docs/reviews/) — review log and gate evidence
+- [`docs/releases/v0.2.0.md`](docs/releases/v0.2.0.md) — release notes and final gate evidence
 
 ## Contributing
 
