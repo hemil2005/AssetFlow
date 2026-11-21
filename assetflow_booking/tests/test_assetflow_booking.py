@@ -106,6 +106,18 @@ class TestAssetflowBooking(TransactionCase):
         with self.assertRaises(ValidationError):
             self._book(0, 1, asset=other)
 
+    def test_booking_created_and_cancelled_notify_booker(self):
+        booking = self._book(0, 1)
+        notifications = self.env['assetflow.notification'].sudo()
+        domain = [
+            ('user_id', '=', self.employee_user.id),
+            ('res_model', '=', 'assetflow.booking'),
+            ('res_id', '=', booking.id),
+        ]
+        self.assertEqual(notifications.search_count(domain), 1)
+        booking.action_cancel(reason='Schedule change')
+        self.assertEqual(notifications.search_count(domain), 2)
+
     def test_state_write_denied(self):
         booking = self._book(0, 1)
         with self.assertRaises(UserError):

@@ -47,7 +47,44 @@ class AssetflowTransfer(models.Model):
             )
             if not is_privileged and not (active and active.employee_id.user_id == user):
                 raise UserError(_('Only the current holder or an Asset Manager can transfer this asset.'))
-        return super().create(vals_list)
+        transfers = super().create(vals_list)
+        for transfer in transfers:
+            transfer._notify_requested()
+        return transfers
+
+    @api.private
+    def _notify_users(self, users, title, body):
+        for user in users:
+            self.env['assetflow.notification']._notify_once(
+                user, title, body, 'transfer', self._name, self.id,
+            )
+
+    @api.private
+    def _notify_requested(self):
+        self.ensure_one()
+        heads = self.env.ref('assetflow_base.group_assetflow_department_head').sudo().user_ids
+        heads = heads.filtered(
+            lambda user: user.employee_id.department_id == self.asset_id.department_id
+        )
+        managers = self.env.ref('assetflow_base.group_assetflow_asset_manager').sudo().user_ids
+        self._notify_users(
+            heads | managers,
+            _('Transfer requested: %s', self.asset_id.asset_tag),
+            _('A transfer of %s was requested by %s.', self.asset_id.asset_tag, self.requested_by.name),
+        )
+
+    @api.private
+    def _notify_decision(self, decision):
+        self.ensure_one()
+        users = self.requested_by
+        for employee in (self.from_employee_id, self.to_employee_id):
+            if employee and employee.user_id:
+                users |= employee.user_id
+        self._notify_users(
+            users,
+            _('Transfer %s: %s', decision, self.asset_id.asset_tag),
+            _('The transfer of %s was %s.', self.asset_id.asset_tag, decision),
+        )
 
     @api.constrains('to_employee_id', 'to_department_id')
     def _check_target(self):
@@ -102,6 +139,7 @@ class AssetflowTransfer(models.Model):
             self.env['assetflow.activity.log']._log_activity(
                 'transfer_approve', transfer, _('Transfer of %s approved', asset.asset_tag),
             )
+            transfer._notify_decision(_('approved'))
 
     def action_reject(self, reason=None):
         for transfer in self:
@@ -117,6 +155,7 @@ class AssetflowTransfer(models.Model):
                 'decided_at': fields.Datetime.now(),
                 'decision_note': reason,
             })
+            transfer._notify_decision(_('rejected'))
 
     def action_cancel(self):
         for transfer in self:

@@ -54,6 +54,8 @@ class AssetflowBooking(models.Model):
                     'Asset %s is %s and cannot be booked.', asset.asset_tag, asset.state,
                 ))
         bookings = super().create(vals_list)
+        for booking in bookings:
+            booking._notify_event(_('Booking created: %s', booking.asset_id.name))
         now = fields.Datetime.now()
         current = bookings.filtered(
             lambda booking: booking.start_datetime <= now < booking.end_datetime
@@ -83,6 +85,22 @@ class AssetflowBooking(models.Model):
                         'Asset %s is %s and cannot be booked.', asset.asset_tag, asset.state,
                     ))
         return super().write(vals)
+
+    @api.private
+    def _notify_event(self, title):
+        self.ensure_one()
+        users = self.employee_id.user_id
+        heads = self.env.ref('assetflow_base.group_assetflow_department_head').sudo().user_ids
+        users |= heads.filtered(
+            lambda user: user.employee_id.department_id == self.department_id
+        )
+        for user in users:
+            self.env['assetflow.notification']._notify_once(
+                user, title,
+                _('%s: %s from %s to %s.', self.asset_id.name, self.state,
+                  self.start_datetime, self.end_datetime),
+                'system', self._name, self.id,
+            )
 
     @api.constrains('asset_id', 'start_datetime', 'end_datetime', 'state')
     def _check_slot(self):
@@ -121,6 +139,7 @@ class AssetflowBooking(models.Model):
                 'cancelled_by': self.env.user.id,
             })
             booking._sync_asset_state()
+            booking._notify_event(_('Booking cancelled: %s', booking.asset_id.name))
 
     @api.private
     def _sync_asset_state(self):

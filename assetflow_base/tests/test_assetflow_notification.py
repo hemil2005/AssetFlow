@@ -47,6 +47,22 @@ class TestAssetflowNotification(TransactionCase):
         self.assertFalse(self.other_notification.is_read)
         self.assertTrue(self.notification.read_at)
 
+    def test_notify_once_is_idempotent_per_user_event_and_day(self):
+        model = self.env['assetflow.notification']
+        domain = [
+            ('user_id', '=', self.user.id),
+            ('res_model', '=', 'assetflow.asset'),
+            ('res_id', '=', 42),
+        ]
+        model._notify_once(
+            self.user, 'Allocated', 'Body', 'system', 'assetflow.asset', 42,
+        )
+        again = model._notify_once(
+            self.user, 'Allocated', 'Body', 'system', 'assetflow.asset', 42,
+        )
+        self.assertFalse(again)
+        self.assertEqual(model.sudo().search_count(domain), 1)
+
     def test_cannot_mark_someone_elses_notification_read(self):
         with self.assertRaises(UserError):
             self.other_notification.with_user(self.user).action_mark_read()

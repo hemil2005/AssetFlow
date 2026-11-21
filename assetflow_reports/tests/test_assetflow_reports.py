@@ -61,6 +61,9 @@ class TestAssetflowReports(TransactionCase):
             'name': 'Oil change',
             'description': 'Service due',
         })
+        # Workflow events now create real notifications for the holder; keep
+        # this fixture's unread count deterministic for the record-rule test.
+        cls.env['assetflow.notification'].with_user(cls.employee_user).action_mark_all_read()
         cls.env['assetflow.notification']._notify(
             cls.employee_user, 'Test notification', 'A booking is due.',
             notification_type='system',
@@ -101,6 +104,14 @@ class TestAssetflowReports(TransactionCase):
         self.assertEqual(recent['recent_log'], [])
         self.assertEqual(len(recent['recent_notifications']), 1)
         self.assertFalse(recent['can_manage_assets'])
+
+    def test_day_bounds_follow_user_timezone(self):
+        dashboard = self.env['assetflow.dashboard'].with_context(tz='Asia/Kolkata')
+        start, end = dashboard._day_bounds_utc(fields.Date.today())
+        # IST is UTC+05:30, so the local day starts at 18:30 UTC the day before.
+        self.assertEqual(start.hour, 18)
+        self.assertEqual(start.minute, 30)
+        self.assertEqual(end - start, timedelta(days=1))
 
     def test_kpi_query_budget(self):
         # 12 count queries plus ORM flush overhead; a regression that loads

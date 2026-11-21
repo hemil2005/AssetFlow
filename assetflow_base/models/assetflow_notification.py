@@ -62,6 +62,29 @@ class AssetflowNotification(models.Model):
         }
 
     @api.model
+    def _notify_once(self, user, title, body='', notification_type='system', res_model=False, res_id=False):
+        """Create at most one notification per event/recipient per day.
+
+        Workflow actions may be retried by a client; this keeps the notification
+        list stable without changing the business state transition itself.
+        """
+        day_start = fields.Datetime.start_of(fields.Datetime.now(), 'day')
+        exists = self.sudo().search_count([
+            ('user_id', '=', user.id),
+            ('notification_type', '=', notification_type),
+            ('title', '=', title),
+            ('res_model', '=', res_model),
+            ('res_id', '=', res_id),
+            ('create_date', '>=', fields.Datetime.to_string(day_start)),
+        ])
+        if exists:
+            return self.env['assetflow.notification']
+        return self._notify(
+            user, title, body, notification_type=notification_type,
+            res_model=res_model, res_id=res_id,
+        )
+
+    @api.model
     def _notify(self, user, title, body='', notification_type='system', res_model=False, res_id=False):
         # Trust boundary: events from other users' workflows create notifications
         # for a named recipient; ACLs still restrict reading them.
