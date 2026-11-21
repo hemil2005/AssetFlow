@@ -203,6 +203,27 @@ class AssetflowAsset(models.Model):
             'update', self, _('Asset %s moved to %s', self.asset_tag, new_state),
         )
 
+    @api.private
+    def _event_recipients(self, with_holder=False, with_heads=False, with_managers=False):
+        users = self.env['res.users']
+        if with_holder and self.holder_employee_id.user_id:
+            users |= self.holder_employee_id.user_id
+        if with_heads and self.department_id:
+            heads = self.env.ref('assetflow_base.group_assetflow_department_head').sudo().user_ids
+            users |= heads.filtered(
+                lambda user: user.employee_id.department_id == self.department_id
+            )
+        if with_managers:
+            users |= self.env.ref('assetflow_base.group_assetflow_asset_manager').sudo().user_ids
+        return users
+
+    @api.private
+    def _notify_event(self, title, body, notification_type='system', **recipients):
+        for user in self._event_recipients(**recipients):
+            self.env['assetflow.notification']._notify_once(
+                user, title, body, notification_type, self._name, self.id,
+            )
+
     def action_allocate(self, employee=None, department=None, expected_return_date=None):
         self.ensure_one()
         self._require_assigner()
@@ -225,6 +246,13 @@ class AssetflowAsset(models.Model):
         self.env['assetflow.activity.log']._log_activity(
             'allocate', self, _('Asset %s allocated', self.asset_tag),
         )
+        holder = self.holder_employee_id.name or self.department_id.name or _('a department')
+        self._notify_event(
+            _('Asset allocated: %s', self.asset_tag),
+            _('%s was allocated to %s.', self.asset_tag, holder),
+            with_holder=True, with_heads=True,
+        )
+        self.message_post(body=_('Allocated to %s.', holder))
 
     def action_return(self, condition=None, notes=None):
         self.ensure_one()
@@ -252,6 +280,10 @@ class AssetflowAsset(models.Model):
         self.env['assetflow.activity.log']._log_activity(
             'return', self, _('Asset %s returned', self.asset_tag),
         )
+        self.message_post(body=_(
+            'Returned with condition %(condition)s. %(notes)s',
+            condition=condition, notes=notes,
+        ))
 
     def action_allocate_from_form(self):
         for asset in self:

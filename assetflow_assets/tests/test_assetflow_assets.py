@@ -134,6 +134,37 @@ class TestAssetflowAssets(TransactionCase):
         asset.with_context(allow_state_write=True).write({'expected_return_date': yesterday})
         self.assertTrue(asset.is_overdue)
 
+    def test_allocation_notifies_holder_and_department_head(self):
+        head_user = self.env['res.users'].create({
+            'name': 'Head User', 'login': 'af_head_notify',
+            'group_ids': [(6, 0, [self.env.ref('assetflow_base.group_assetflow_department_head').id])],
+        })
+        self.env['assetflow.employee'].create({
+            'name': 'Head', 'email': 'head@assetflow.test',
+            'department_id': self.department.id, 'user_id': head_user.id,
+        })
+        self.asset.with_user(self.manager).action_allocate(employee=self.employee)
+        notifications = self.env['assetflow.notification'].sudo()
+        for user in (self.employee_user, head_user):
+            self.assertTrue(notifications.search_count([
+                ('user_id', '=', user.id),
+                ('res_model', '=', 'assetflow.asset'),
+                ('res_id', '=', self.asset.id),
+            ]))
+
+    def test_transfer_decision_notifies_requester(self):
+        self.asset.with_user(self.manager).action_allocate(employee=self.employee)
+        transfer = self.env['assetflow.transfer'].with_user(self.employee_user).create({
+            'asset_id': self.asset.id, 'to_employee_id': self.other_employee.id,
+            'reason': 'Test transfer',
+        })
+        transfer.with_user(self.manager).action_approve()
+        self.assertTrue(self.env['assetflow.notification'].sudo().search_count([
+            ('user_id', '=', self.employee_user.id),
+            ('res_model', '=', 'assetflow.transfer'),
+            ('res_id', '=', transfer.id),
+        ]))
+
     def test_allocation_derives_department_from_employee(self):
         self.asset.with_user(self.manager).action_allocate(employee=self.employee)
         allocation = self.asset.allocation_ids
